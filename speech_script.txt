@@ -1,0 +1,211 @@
+========================================================================================
+MAD PROJECT PRESENTATION: COMPREHENSIVE 10-MINUTE SPEECH SCRIPT
+Title: Offline-First Habit Tracker with Local Rule-Based Behavioral Insights
+Course: Mobile Application Development (MAD) Capstone
+Team Members:
+  • Member 1: Soham (Roll No: C096)  — Slides 1 to 3 (~3 min 20 sec)
+  • Member 2: Aman  (Roll No: C106)  — Slides 4 to 6 (~3 min 20 sec)
+  • Member 3: Arsh  (Roll No: C109)  — Slides 7 to 9 (~3 min 20 sec)
+Total Duration: Exactly 10 Minutes (followed by Faculty Q&A)
+========================================================================================
+
+----------------------------------------------------------------------------------------
+SECTION 1: INTRODUCTION, PROBLEM DOMAIN & VISION
+SPEAKER: SOHAM (Roll No: C096)
+TARGET TIME: 0:00 – 3:20 (Total: 3m 20s)
+----------------------------------------------------------------------------------------
+
+[SLIDE 1: TITLE & TEAM INTRODUCTION]
+Target Duration: ~1 minute 10 seconds
+
+Key Emphasis Points:
+• Welcome the evaluator/faculty warmly and state the exact project title.
+• Introduce all team members with their assigned engineering domains.
+• State the primary premise: 100% offline, privacy-first, and zero cloud dependency.
+
+Verbatim Spoken Script:
+"Good morning respected professors and fellow students. Welcome to our Mobile Application Development capstone presentation. Today, our team—consisting of Aman, Arsh, and myself, Soham—is excited to present our project: an 'Offline-First Habit Tracker with Local Rule-Based Behavioral Insights.'
+
+In a market saturated with generic habit checklists, our application takes a fundamentally different engineering stance. We have built a mobile app that guarantees absolute data sovereignty by storing all habit logs strictly on-device using SQLite, schedules autonomous streak defense reminders via modern Android background services, and delivers evidence-based cognitive behavioral coaching—all without sending a single byte of personal telemetry to external cloud servers.
+
+Over the next 10 minutes, we will walk you through our complete engineering lifecycle: I will cover our core motivation, problem statement, and conceptual foundation; Aman will dive into our layered MVVM architecture, SQLite schema design, and WorkManager background services; and Arsh will demonstrate our rule-based behavioral analytics engine, visual analytics, and automated test suite. Let us begin by examining why current habit tracking software fails modern users."
+
+
+[SLIDE 2: PROBLEM STATEMENT & CRITICAL MOTIVATION]
+Target Duration: ~1 minute 05 seconds
+
+Key Emphasis Points:
+• Explain the three major flaws of existing trackers: privacy leakage, offline fragility, and passive checkboxes.
+• Explain the psychological phenomenon of streak collapse and user abandonment.
+
+Verbatim Spoken Script:
+"When our team surveyed commercial habit trackers on the Google Play Store, we discovered a consistent pattern of architectural and psychological shortcomings, which we categorized into three fatal flaws:
+
+First is Cloud Lock-In and Privacy Risks. Personal habits—such as medication schedules, meditation sessions, or mental wellness routines—represent intimate human telemetry. Yet nearly every commercial app mandates cloud accounts and sends daily logs to third-party ad networks.
+
+Second is Offline Fragility and High Latency. Routine check-ins happen in subway transits, gym basements, or remote locations where network connectivity drops. When cloud-dependent apps encounter network dead zones, they freeze behind spinners or suffer sync conflicts that wipe active streak records.
+
+Third, and most importantly: Traditional Trackers Are Passive Checklists. They treat habit formation as a binary tick-box. When a user fails a habit on Saturday, the app simply displays a red cross. It does not understand why the habit failed, nor does it provide psychological interventions like habit stacking or minimum viable scaling. As a result, when a user breaks a single streak, the 'what-the-hell' effect kicks in, and the user abandons the app entirely. This motivated us to build an intelligent, offline-first companion."
+
+
+[SLIDE 3: PROPOSED SOLUTION & CORE CONCEPT]
+Target Duration: ~1 minute 05 seconds
+
+Key Emphasis Points:
+• Present the three pillars: Local Sovereignty, Rule-Based Behavioral Engine, and Background Guardian.
+• Seamless transition cue to Aman for technical implementation.
+
+Verbatim Spoken Script:
+"To address these systemic vulnerabilities, we architected a solution anchored on three robust pillars:
+
+Pillar Number One is Absolute Local Sovereignty. By embedding an ACID-compliant SQLite relational database directly inside the mobile runtime, all data reads, writes, and streak metrics execute with sub-millisecond latency. The application is completely functional in airplane mode, requires zero login, and eliminates cloud hosting costs.
+
+Pillar Number Two is our Rule-Based Behavioral Analytics Engine. Rather than relying on non-deterministic, high-latency cloud LLMs, we translated proven behavioral psychology frameworks—including James Clear's Atomic Habits, BJ Fogg's Tiny Habits, and Daniel Kahneman's Behavioral Economics—into local deterministic heuristics that analyze user adherence patterns.
+
+Pillar Number Three is an Autonomous Background Guardian. Utilizing native Android background capabilities, our app periodically checks incomplete habits and fires timely, context-aware streak defense alerts before midnight.
+
+To explain the architectural blueprint and data layer that makes this possible, I will now hand the presentation over to Aman."
+
+[VERBAL TRANSITION CUE: 'Aman, over to you.']
+
+
+----------------------------------------------------------------------------------------
+SECTION 2: ARCHITECTURE, DATABASE SCHEMA & BACKGROUND SERVICES
+SPEAKER: AMAN (Roll No: C106)
+TARGET TIME: 3:20 – 6:40 (Total: 3m 20s)
+----------------------------------------------------------------------------------------
+
+[SLIDE 4: TECHNICAL ARCHITECTURE & TECH STACK]
+Target Duration: ~1 minute 10 seconds
+
+Key Emphasis Points:
+• Thank Soham and outline the layered MVVM architecture.
+• Detail technology choices: Flutter, Dart, SQLite, Provider, WorkManager, fl_chart.
+
+Verbatim Spoken Script:
+"Thank you, Soham. Respected faculty, I will now present our technical architecture and technology stack.
+
+To achieve strict separation of concerns, we implemented a clean, layered Model-View-ViewModel (MVVM) architecture using Flutter and the Provider state management pattern. Our codebase in the `lib/` directory is divided into four distinct layers:
+
+1. The Presentation Layer houses our views and ViewModels—specifically `HabitViewModel`, `InsightsViewModel`, and `StatsViewModel`. ViewModels extend `ChangeNotifier` and expose immutable state streams to reactive widgets.
+2. The Domain Layer contains our pure business logic and behavioral heuristics, keeping calculation algorithms strictly decoupled from Flutter UI widgets.
+3. The Data Layer implements the Repository Pattern on top of SQLite, isolating raw SQL queries behind clean domain interfaces.
+4. The Background Services Layer bridges native Android APIs.
+
+We chose Flutter 3.44 and Dart because they compile directly to native ARM machine code on Android, delivering smooth 60 and 120 FPS rendering. For visualization, we integrated `fl_chart`, and for background scheduling, we utilized the Android WorkManager API. Let us look closer at how our data layer guarantees relational integrity."
+
+
+[SLIDE 5: SQLITE DATABASE SCHEMA & DATA INTEGRITY]
+Target Duration: ~1 minute 10 seconds
+
+Key Emphasis Points:
+• Walk through the 3 primary tables: `habits`, `habit_logs`, and `behavioral_insights`.
+• Highlight the composite index and `UNIQUE(habit_id, date)` constraint.
+
+Verbatim Spoken Script:
+"Because our application operates completely offline, the database schema is the single source of truth. We designed three primary relational tables in SQLite:
+
+First, the `habits` table stores habit definitions—including title, category, target count, unit, scheduled frequency, reminder time, and an `anchor_habit_id` foreign key that enables procedural habit stacking.
+
+Second, the `habit_logs` table records daily execution data—including completion status, numeric counts, mood scores from 1 to 5, and reflection notes. Notice the critical database constraint: `UNIQUE(habit_id, date)`. This constraint guarantees idempotency: even if a user rapidly toggles check-ins, duplicate historical logs can never corrupt the metrics.
+
+Third, the `behavioral_insights` table caches generated behavioral nudges categorized by severity and psychological principle.
+
+To ensure that 30-day analytics and heatmaps render instantly without stuttering the UI thread, we created compound B-tree indexes on `(habit_id, date)` and `(date)`. Furthermore, we enforced `ON DELETE CASCADE`: deleting a habit automatically purges associated logs and cached insights, maintaining zero orphaned records."
+
+
+[SLIDE 6: BACKGROUND SERVICES & ANDROID WORKMANAGER]
+Target Duration: ~1 minute 00 seconds
+
+Key Emphasis Points:
+• Address modern Android background constraints (Doze Mode, App Standby).
+• Explain WorkManager isolate execution and the Streak Defense alert rule.
+
+Verbatim Spoken Script:
+"One of the most complex engineering challenges in modern Android development is running background tasks reliably without draining the device battery or being killed by Android's Doze mode.
+
+Standard alarms and background threads are frequently terminated by the OS. To solve this, we implemented Android's recommended WorkManager API using Flutter's `@pragma('vm:entry-point')` callback dispatcher.
+
+Every three hours, Android WorkManager wakes a background Dart isolate. This isolate independently initializes our SQLite database singleton and queries for any habits scheduled for today that remain incomplete.
+
+If the user has an active streak of 3 or more days and the current time passes 6:00 PM, the background engine detects a 'Streak-at-Risk' condition. It immediately dispatches a high-priority local notification through our registered Android notification channel. This alerts the user to complete their 2-minute minimum viable habit before the day ends, actively preserving their momentum.
+
+Now, to explain how our Behavioral Analytics Engine translates psychological principles into actionable guidance, I invite Arsh to take over."
+
+[VERBAL TRANSITION CUE: 'Arsh, please take the floor.']
+
+
+----------------------------------------------------------------------------------------
+SECTION 3: BEHAVIORAL ENGINE, UI/ANALYTICS & CONCLUSION
+SPEAKER: ARSH (Roll No: C109)
+TARGET TIME: 6:40 – 10:00 (Total: 3m 20s)
+----------------------------------------------------------------------------------------
+
+[SLIDE 7: RULE-BASED BEHAVIORAL ANALYTICS ENGINE]
+Target Duration: ~1 minute 15 seconds
+
+Key Emphasis Points:
+• Explain why rule-based heuristics outperform heavy cloud LLMs for on-device habit tracking.
+• Walk through the 4 heuristics: Habit Stacking, Weekend Slump, Circadian Friction, and Never Miss Twice.
+
+Verbatim Spoken Script:
+"Thank you, Aman. Good morning everyone. I will now present the intellectual engine of our project: the Rule-Based Behavioral Analytics Engine.
+
+While large language models are powerful, running generative models in the cloud compromises privacy and incurs network latency, while running them on edge devices drains mobile batteries. We realized that behavioral psychology is fundamentally governed by deterministic laws. Therefore, we codified four major behavioral science heuristics into an on-device algorithmic engine:
+
+First is James Clear's 'Habit Stacking'. The engine analyzes the user's 30-day consistency and identifies 'Anchor Habits' with over 75% consistency—such as your morning espresso. When you struggle with a new habit—like journaling at 35%—the engine pairs them, giving you an actionable formula: 'Immediately after Morning Espresso, write in your journal for 2 minutes.'
+
+Second is BJ Fogg's 'Weekend Slump Detector'. The engine compares Monday-to-Friday completion against Saturday-and-Sunday completion. If consistency drops by more than 25%, it prescribes a 'Minimum Viable Habit'—reducing the target by 75% on weekends to preserve the neural habit loop without causing friction.
+
+Third is Circadian Friction Analysis. By analyzing hourly check-in timestamps, the engine detects ego depletion—such as finding that morning workouts succeed 90% of the time, while evening workouts fail 65% of the time due to willpower exhaustion.
+
+Fourth is the 'Never Miss Twice' Rule. If a habit was missed yesterday, the engine immediately elevates it to high priority before noon today, preventing a single lapse from turning into habit abandonment."
+
+
+[SLIDE 8: USER INTERFACE & VISUAL PROGRESS ANALYTICS]
+Target Duration: ~1 minute 05 seconds
+
+Key Emphasis Points:
+• Present the 3 core views: Dashboard, Behavioral Feed, and Analytics/Heatmap.
+• Mention Material 3 aesthetic, progress ring, and fl_chart integration.
+
+Verbatim Spoken Script:
+"A behavioral engine is only as effective as the interface that communicates it. We crafted a modern Material 3 dark-themed UI with emerald and indigo accents:
+
+Our Dashboard features a horizontal calendar date strip, a real-time daily progress ring showing completion percentages, and dynamic flame streak badges. Habits feature tactile one-tap toggles, and for numeric habits—like drinking 8 glasses of water—users have dedicated increment and decrement controls. Tapping any habit opens a reflection dialog where users rate their perceived effort from 1 to 5 emojis.
+
+The Insights Feed displays our proprietary 'Habit Health Index'—an aggregate procedural memory score from 0 to 100. Each insight card is color-coded by severity, cites the exact psychological principle, and provides a 2-minute actionable experiment.
+
+Finally, the Analytics Tab leverages `fl_chart` to render an interactive 7-day completion bar chart, a category allocation donut chart, and a 28-day GitHub-style consistency heatmap matrix. This visual density grid allows users to spot weekly patterns at a glance."
+
+
+[SLIDE 9: VERIFICATION, CHALLENGES, ROADMAP & CONCLUSION]
+Target Duration: ~1 minute 00 seconds
+
+Key Emphasis Points:
+• Announce testing metrics: 7/7 unit tests passed, 0 lint warnings.
+• Discuss challenges overcome: isolate communication and custom frequencies.
+• Conclude professionally and invite faculty questions.
+
+Verbatim Spoken Script:
+"To conclude our presentation, we subjected our application to comprehensive automated verification:
+
+Our unit and widget test suite achieved a 100% pass rate across all 7 test cases, validating our streak algorithms, habit stacking heuristic, weekend slump calculations, circadian time groupings, and SQLite JSON serialization. Furthermore, `dart analyze` reports zero warnings and zero lints across the entire codebase.
+
+During development, our primary challenges involved SQLite singleton initialization inside separate WorkManager isolates, and designing a non-punitive streak algorithm that respects custom weekday frequencies.
+
+Looking ahead, our modular architecture is directly primed for integrating on-device quantized Small Language Models—such as Google Gemma 2B via MediaPipe—allowing conversational coaching without any privacy compromises.
+
+In summary, our team—Soham, Aman, and myself—has engineered a fully functional, battery-efficient, offline-first mobile application that transforms passive tracking into proactive behavioral change.
+
+Thank you very much for your time and attention. We would now be delighted to answer any questions from the faculty."
+
+[VERBAL CONCLUSION: 'Thank you. We are ready for Q&A.']
+
+
+========================================================================================
+PRACTICE TIPS FOR THE TEAM:
+• Keep a stopwatch during your dry run to ensure you hit the 3m 20s mark per speaker.
+• Make eye contact with the faculty panel during transitions.
+• Have the running Flutter demo app or presentation.html open alongside this script!
+========================================================================================
