@@ -5,6 +5,8 @@ import '../../data/models/habit.dart';
 import '../core/app_constants.dart';
 import '../viewmodels/habit_viewmodel.dart';
 
+/// Form screen for creating new habits or modifying existing habits,
+/// including category selection, custom icons, numeric targets, and habit stacking.
 class AddEditHabitView extends StatefulWidget {
   final Habit? habitToEdit;
 
@@ -149,7 +151,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
             // 1. Habit Title
             TextFormField(
@@ -234,11 +236,11 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? Color(_colorValue).withValues(alpha: 0.2)
-                            : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                        borderRadius: BorderRadius.circular(12),
+                            : (isDark ? const Color(0xFF141C2E) : const Color(0xFFF1F5F9)),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: isSelected ? Color(_colorValue) : Colors.transparent,
-                          width: 2,
+                          color: isSelected ? Color(_colorValue) : (isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0)),
+                          width: isSelected ? 2 : 1,
                         ),
                       ),
                       child: Icon(icon, color: isSelected ? Color(_colorValue) : Colors.grey),
@@ -307,8 +309,11 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  color: isDark ? const Color(0xFF141C2E) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 child: const Icon(Icons.notifications_active_rounded, color: Color(0xFF10B981)),
               ),
@@ -338,9 +343,9 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+                color: const Color(0xFF6366F1).withValues(alpha: isDark ? 0.12 : 0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.35)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,10 +407,11 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                   backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 4,
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 48),
           ],
         ),
       ),

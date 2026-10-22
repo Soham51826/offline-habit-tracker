@@ -1,15 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:workmanager/workmanager.dart';
 import '../data/datasources/database_helper.dart';
 import 'notification_service.dart';
 
 const String habitPeriodicTaskKey = 'com.offlinetracker.habits.periodic_check';
-const String habitStreakDefenseTaskKey = 'com.offlinetracker.habits.streak_defense';
+const String habitStreakDefenseTaskKey = 'com.offlinetracker.habits.midnight_streak_defense';
 
+/// Top-level background execution dispatcher for Android WorkManager.
+///
+/// Runs in a separate background isolate when Android OS triggers scheduled tasks,
+/// even when the main app process has been suspended or killed.
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
+    WidgetsFlutterBinding.ensureInitialized();
+
     try {
       final now = DateTime.now();
       final dateStr = DateFormat('yyyy-MM-dd').format(now);
@@ -24,6 +31,25 @@ void callbackDispatcher() {
         return h.isScheduledForWeekday(now.weekday) && !completedHabitIds.contains(h.id);
       }).toList();
 
+      if (taskName == habitStreakDefenseTaskKey) {
+        // Late-night streak defense intervention
+        if (pendingHabits.isNotEmpty && now.hour >= 20) {
+          final count = pendingHabits.length;
+          final title = '🛡️ Final Streak Defense Alert';
+          final body = count == 1
+              ? 'Only 1 habit remaining before midnight! Log "${pendingHabits.first.title}" now.'
+              : '$count habits remain incomplete today. Check in before midnight to protect your streaks!';
+
+          await NotificationService.instance.showNotification(
+            id: 1002,
+            title: title,
+            body: body,
+          );
+        }
+        return Future.value(true);
+      }
+
+      // Default periodic check
       if (pendingHabits.isNotEmpty) {
         final count = pendingHabits.length;
         final firstTitle = pendingHabits.first.title;
@@ -33,7 +59,7 @@ void callbackDispatcher() {
             ? 'Don\'t forget to complete "$firstTitle" today!'
             : 'You have $count pending habits for today, including "$firstTitle".';
 
-        // If it's evening, emphasize streak defense
+        // Afternoon/evening streak defense escalation
         if (now.hour >= 18) {
           title = '🛡️ Streak Defense Alert';
           body = 'Keep your momentum alive! $count habits remain unfinished today.';
@@ -48,19 +74,20 @@ void callbackDispatcher() {
 
       return Future.value(true);
     } catch (e) {
-      debugPrint('Background worker error: $e');
+      debugPrint('WorkManager background execution error: $e');
       return Future.value(false);
     }
   });
 }
 
+/// Service orchestrating background scheduling and periodic streak checks.
 class BackgroundWorkerService {
   static final BackgroundWorkerService instance = BackgroundWorkerService._internal();
 
   BackgroundWorkerService._internal();
 
+  /// Initializes WorkManager across Android and iOS platforms.
   Future<void> initialize() async {
-    // WorkManager is primarily designed for Android & iOS
     if (kIsWeb) return;
     if (defaultTargetPlatform != TargetPlatform.android &&
         defaultTargetPlatform != TargetPlatform.iOS) {
@@ -73,10 +100,13 @@ class BackgroundWorkerService {
         isInDebugMode: kDebugMode,
       );
     } catch (e) {
-      debugPrint('Workmanager init failed: $e');
+      debugPrint('Workmanager initialization failed: $e');
     }
   }
 
+  /// Schedules periodic background checks (frequency: 3 hours, initialDelay: 15 mins).
+  ///
+  /// Configured without network constraints so tasks execute purely offline on-device.
   Future<void> schedulePeriodicHabitCheck() async {
     if (kIsWeb) return;
     if (defaultTargetPlatform != TargetPlatform.android &&
@@ -85,12 +115,12 @@ class BackgroundWorkerService {
     }
 
     try {
-      // WorkManager periodic minimum interval on Android is 15 minutes
       await Workmanager().registerPeriodicTask(
         habitPeriodicTaskKey,
         habitPeriodicTaskKey,
         frequency: const Duration(hours: 3),
         initialDelay: const Duration(minutes: 15),
+        existingWorkPolicy: ExistingWorkPolicy.replace,
         constraints: Constraints(
           networkType: NetworkType.not_required,
           requiresBatteryNotLow: false,
@@ -99,12 +129,30 @@ class BackgroundWorkerService {
           requiresStorageNotLow: false,
         ),
       );
-      debugPrint('Periodic WorkManager habit task registered successfully.');
+
+      // Register late evening streak audit check
+      await Workmanager().registerPeriodicTask(
+        habitStreakDefenseTaskKey,
+        habitStreakDefenseTaskKey,
+        frequency: const Duration(hours: 6),
+        initialDelay: const Duration(hours: 2),
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+        constraints: Constraints(
+          networkType: NetworkType.not_required,
+          requiresBatteryNotLow: false,
+          requiresCharging: false,
+          requiresDeviceIdle: false,
+          requiresStorageNotLow: false,
+        ),
+      );
+
+      debugPrint('Periodic WorkManager habit tasks registered successfully.');
     } catch (e) {
       debugPrint('Failed to register WorkManager task: $e');
     }
   }
 
+  /// Cancels all background tasks.
   Future<void> cancelAllTasks() async {
     if (kIsWeb) return;
     try {

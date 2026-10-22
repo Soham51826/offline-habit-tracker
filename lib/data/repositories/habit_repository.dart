@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../datasources/database_helper.dart';
@@ -5,6 +6,7 @@ import '../models/habit.dart';
 import '../models/habit_log.dart';
 import '../models/habit_stats.dart';
 
+/// Presentation-ready wrapper pairing a habit definition with its day log and statistics.
 class HabitWithLog {
   final Habit habit;
   final HabitLog? log;
@@ -16,14 +18,20 @@ class HabitWithLog {
     required this.stats,
   });
 
+  /// True if completed for the evaluated date.
   bool get isCompletedToday => log != null && log!.isCompleted;
+
+  /// Current progress counter for numeric habits.
   int get currentCount => log?.value ?? 0;
+
+  /// Progress ratio clamped between 0.0 and 1.0.
   double get progressPercentage {
     if (habit.targetCount <= 0) return 0.0;
     return (currentCount / habit.targetCount).clamp(0.0, 1.0);
   }
 }
 
+/// Repository managing habit operations, daily logs, and mathematical analytics.
 class HabitRepository {
   final DatabaseHelper _dbHelper;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
@@ -54,6 +62,7 @@ class HabitRepository {
     await _dbHelper.deleteHabit(id);
   }
 
+  /// Retrieves scheduled habits for a specific date together with logs and updated stats.
   Future<List<HabitWithLog>> getHabitsForDate(DateTime date) async {
     final habits = await _dbHelper.getAllHabits();
     final dateStr = formatDate(date);
@@ -72,7 +81,13 @@ class HabitRepository {
     return result;
   }
 
-  Future<void> toggleHabitCompletion(String habitId, DateTime date, {int? moodScore, String? notes}) async {
+  /// Toggles habit completion on or off for a designated date.
+  Future<void> toggleHabitCompletion(
+    String habitId,
+    DateTime date, {
+    int? moodScore,
+    String? notes,
+  }) async {
     final dateStr = formatDate(date);
     final habit = await _dbHelper.getHabitById(habitId);
     if (habit == null) return;
@@ -98,6 +113,7 @@ class HabitRepository {
     }
   }
 
+  /// Updates increment/decrement counter for numeric target habits.
   Future<void> updateHabitProgress(String habitId, DateTime date, int delta) async {
     final dateStr = formatDate(date);
     final habit = await _dbHelper.getHabitById(habitId);
@@ -126,6 +142,7 @@ class HabitRepository {
     await _dbHelper.insertOrUpdateLog(log);
   }
 
+  /// Calculates mathematically accurate streaks and 7-day/30-day rolling completion ratios.
   Future<HabitStats> calculateStats(String habitId) async {
     final habit = await _dbHelper.getHabitById(habitId);
     if (habit == null) return HabitStats.empty(habitId);
@@ -135,62 +152,86 @@ class HabitRepository {
 
     final completedLogs = logs.where((l) => l.isCompleted).toList();
     final totalCompletions = completedLogs.length;
-
-    // Set of completed date strings
     final completedDateStrings = completedLogs.map((l) => l.date).toSet();
 
-    // 1. Current Streak Calculation
-    int currentStreak = 0;
     final now = DateTime.now();
-    final todayStr = formatDate(now);
-    final yesterdayStr = formatDate(now.subtract(const Duration(days: 1)));
+    final today = DateTime(now.year, now.month, now.day);
+    final todayStr = formatDate(today);
 
-    DateTime checkDate;
-    if (completedDateStrings.contains(todayStr)) {
-      checkDate = now;
-    } else if (completedDateStrings.contains(yesterdayStr)) {
-      checkDate = now.subtract(const Duration(days: 1));
-    } else {
-      checkDate = now; // streak is 0 if neither today nor yesterday completed
-    }
+    // 1. Mathematically Accurate Current Streak Calculation
+    int currentStreak = 0;
+    DateTime cursor = today;
 
-    if (completedDateStrings.contains(formatDate(checkDate))) {
-      while (true) {
-        final dStr = formatDate(checkDate);
-        if (completedDateStrings.contains(dStr)) {
-          currentStreak++;
-          checkDate = checkDate.subtract(const Duration(days: 1));
-        } else {
-          // If custom frequency, check if day was scheduled
-          if (!habit.isScheduledForWeekday(checkDate.weekday)) {
-            // Skipped non-scheduled day doesn't break streak
-            checkDate = checkDate.subtract(const Duration(days: 1));
-            continue;
+    // Check if today was completed
+    final completedToday = completedDateStrings.contains(todayStr);
+
+    if (!completedToday) {
+      // If today is scheduled but not completed yet, streak is intact if the previous scheduled day was completed
+      cursor = today.subtract(const Duration(days: 1));
+      // Rewind past any non-scheduled days
+      while (!habit.isScheduledForWeekday(cursor.weekday) &&
+          cursor.isAfter(today.subtract(const Duration(days: 14)))) {
+        cursor = cursor.subtract(const Duration(days: 1));
+      }
+
+      // If the most recent scheduled day was NOT completed, streak is broken (0)
+      if (!completedDateStrings.contains(formatDate(cursor))) {
+        currentStreak = 0;
+      } else {
+        // Most recent scheduled day was completed, start counting streak back from that day
+        while (true) {
+          if (habit.isScheduledForWeekday(cursor.weekday)) {
+            if (completedDateStrings.contains(formatDate(cursor))) {
+              currentStreak++;
+            } else {
+              break;
+            }
           }
-          break;
+          cursor = cursor.subtract(const Duration(days: 1));
+          if (cursor.difference(today).inDays.abs() > 365) break;
         }
+      }
+    } else {
+      // Completed today: count today and walk backward
+      while (true) {
+        if (habit.isScheduledForWeekday(cursor.weekday)) {
+          if (completedDateStrings.contains(formatDate(cursor))) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+        cursor = cursor.subtract(const Duration(days: 1));
+        if (cursor.difference(today).inDays.abs() > 365) break;
       }
     }
 
     // 2. Longest Streak Calculation
-    int longestStreak = 0;
-    int tempStreak = 0;
+    int longestStreak = currentStreak;
     if (completedDateStrings.isNotEmpty) {
-      final sortedDates = completedDateStrings.map((s) => DateTime.parse(s)).toList()
+      final sortedDates = completedDateStrings
+          .map((s) => DateTime.parse(s))
+          .map((d) => DateTime(d.year, d.month, d.day))
+          .toSet()
+          .toList()
         ..sort((a, b) => a.compareTo(b));
 
       if (sortedDates.isNotEmpty) {
-        tempStreak = 1;
-        longestStreak = 1;
+        int tempStreak = 1;
+        if (tempStreak > longestStreak) longestStreak = tempStreak;
+
         for (int i = 1; i < sortedDates.length; i++) {
-          final diff = sortedDates[i].difference(sortedDates[i - 1]).inDays;
+          final prev = sortedDates[i - 1];
+          final curr = sortedDates[i];
+          final diff = curr.difference(prev).inDays;
+
           if (diff == 1) {
             tempStreak++;
           } else if (diff > 1) {
-            // Check if intermediate days were non-scheduled
+            // Check if intermediate days were all non-scheduled days
             bool allNonScheduled = true;
             for (int d = 1; d < diff; d++) {
-              final intermediate = sortedDates[i - 1].add(Duration(days: d));
+              final intermediate = prev.add(Duration(days: d));
               if (habit.isScheduledForWeekday(intermediate.weekday)) {
                 allNonScheduled = false;
                 break;
@@ -209,53 +250,69 @@ class HabitRepository {
       }
     }
 
-    // 3. Completion Rates (7 Days & 30 Days)
+    // 3. Exact Rolling Window Ratios (7 Days & 30 Days)
+    final habitCreatedDay = DateTime(
+      habit.createdAt.year,
+      habit.createdAt.month,
+      habit.createdAt.day,
+    );
+    final daysActive = max(1, today.difference(habitCreatedDay).inDays + 1);
+
+    // 7-Day Window (capped by days active if habit is younger than 7 days)
+    final window7 = min(7, daysActive);
     int scheduled7 = 0;
     int completed7 = 0;
-    for (int i = 0; i < 7; i++) {
-      final day = now.subtract(Duration(days: i));
-      if (habit.isScheduledForWeekday(day.weekday)) {
+    for (int i = 0; i < window7; i++) {
+      final d = today.subtract(Duration(days: i));
+      if (habit.isScheduledForWeekday(d.weekday)) {
         scheduled7++;
-        if (completedDateStrings.contains(formatDate(day))) {
+        if (completedDateStrings.contains(formatDate(d))) {
           completed7++;
         }
       }
     }
-    final rate7 = scheduled7 > 0 ? completed7 / scheduled7 : 0.0;
+    final rate7 = scheduled7 > 0 ? (completed7 / scheduled7).clamp(0.0, 1.0) : 0.0;
 
+    // 30-Day Window (capped by days active if habit is younger than 30 days)
+    final window30 = min(30, daysActive);
     int scheduled30 = 0;
     int completed30 = 0;
-    for (int i = 0; i < 30; i++) {
-      final day = now.subtract(Duration(days: i));
-      if (habit.isScheduledForWeekday(day.weekday)) {
+    for (int i = 0; i < window30; i++) {
+      final d = today.subtract(Duration(days: i));
+      if (habit.isScheduledForWeekday(d.weekday)) {
         scheduled30++;
-        if (completedDateStrings.contains(formatDate(day))) {
+        if (completedDateStrings.contains(formatDate(d))) {
           completed30++;
         }
       }
     }
-    final rate30 = scheduled30 > 0 ? completed30 / scheduled30 : 0.0;
+    final rate30 = scheduled30 > 0 ? (completed30 / scheduled30).clamp(0.0, 1.0) : 0.0;
 
-    // All-time completion rate from habit creation
-    final daysSinceCreation = now.difference(habit.createdAt).inDays + 1;
-    final totalScheduled = (daysSinceCreation * (scheduled7 / (7 > 0 ? 7 : 1))).round().clamp(1, 99999);
-    final allTimeRate = (totalCompletions / totalScheduled).clamp(0.0, 1.0);
+    // All-time completion calculation
+    int totalScheduledAllTime = 0;
+    for (int i = 0; i < daysActive; i++) {
+      final d = today.subtract(Duration(days: i));
+      if (habit.isScheduledForWeekday(d.weekday)) {
+        totalScheduledAllTime++;
+      }
+    }
+    final allTimeRate = totalScheduledAllTime > 0
+        ? (totalCompletions / totalScheduledAllTime).clamp(0.0, 1.0)
+        : 0.0;
 
-    // Consistency score (weighted 60% 7-day rate + 40% 30-day rate)
+    // Weighted consistency score: 60% weight on recent 7-day habituation + 40% on 30-day baseline
     final consistency = ((rate7 * 0.6 + rate30 * 0.4) * 100).clamp(0.0, 100.0);
 
     return HabitStats(
       habitId: habitId,
       currentStreak: currentStreak,
-      longestStreak: longestStreak > currentStreak ? longestStreak : currentStreak,
+      longestStreak: max(longestStreak, currentStreak),
       totalCompletions: totalCompletions,
       completionRate7Days: rate7,
       completionRate30Days: rate30,
       allTimeCompletionRate: allTimeRate,
       consistencyScore: consistency,
-      lastCompletedDate: completedLogs.isNotEmpty
-          ? completedLogs.first.loggedAt
-          : null,
+      lastCompletedDate: completedLogs.isNotEmpty ? completedLogs.first.loggedAt : null,
     );
   }
 

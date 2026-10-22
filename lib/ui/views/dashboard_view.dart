@@ -8,6 +8,8 @@ import '../viewmodels/habit_viewmodel.dart';
 import '../viewmodels/insights_viewmodel.dart';
 import 'add_edit_habit_view.dart';
 
+/// Main interactive dashboard showcasing the horizontal calendar strip,
+/// daily progress ring, urgent streak alerts, and staggered habit checklist.
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
 
@@ -167,7 +169,7 @@ class _DashboardViewState extends State<DashboardView> {
     final insightsVm = context.watch<InsightsViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Check if any active streak is at risk
+    // Check if any urgent streak risk alert exists
     final streakRiskInsight = insightsVm.insights.cast<dynamic>().firstWhere(
       (i) => i.severity.name == 'urgent',
       orElse: () => null,
@@ -206,15 +208,18 @@ class _DashboardViewState extends State<DashboardView> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddEditHabitView()),
-          );
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Habit', style: TextStyle(fontWeight: FontWeight.w700)),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72), // Leave clearance for floating nav
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddEditHabitView()),
+            );
+          },
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Add Habit', style: TextStyle(fontWeight: FontWeight.w700)),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -224,7 +229,7 @@ class _DashboardViewState extends State<DashboardView> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            // 1. Horizontal Date Strip
+            // 1. Horizontal Date Strip with smooth selection
             _buildDateStrip(habitVm, isDark),
             const SizedBox(height: 16),
 
@@ -246,7 +251,7 @@ class _DashboardViewState extends State<DashboardView> {
             _buildCategoryFilters(habitVm, isDark),
             const SizedBox(height: 16),
 
-            // 5. Habits Checklist
+            // 5. Staggered Animated Habits Checklist
             if (habitVm.isLoading)
               const Center(
                 child: Padding(
@@ -257,26 +262,44 @@ class _DashboardViewState extends State<DashboardView> {
             else if (habitVm.filteredHabits.isEmpty)
               _buildEmptyState(context, habitVm)
             else
-              ...habitVm.filteredHabits.map((item) {
-                return HabitCard(
-                  item: item,
-                  onToggle: () => habitVm.toggleHabitCompletion(item.habit.id),
-                  onProgressChange: (delta) =>
-                      habitVm.updateHabitProgress(item.habit.id, delta),
-                  onTap: () => _showLogDetailDialog(context, item),
-                  onEdit: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddEditHabitView(habitToEdit: item.habit),
+              ...habitVm.filteredHabits.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+
+                return TweenAnimationBuilder<double>(
+                  key: ValueKey('stagger_${item.habit.id}_${habitVm.selectedDate}'),
+                  duration: Duration(milliseconds: 220 + (index * 60)),
+                  tween: Tween<double>(begin: 0.0, end: 1.0),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Transform.translate(
+                      offset: Offset(0, (1.0 - value) * 24),
+                      child: Opacity(
+                        opacity: value,
+                        child: child,
                       ),
                     );
                   },
-                  onDelete: () => _showDeleteConfirmation(context, item.habit.id),
+                  child: HabitCard(
+                    item: item,
+                    onToggle: () => habitVm.toggleHabitCompletion(item.habit.id),
+                    onProgressChange: (delta) =>
+                        habitVm.updateHabitProgress(item.habit.id, delta),
+                    onTap: () => _showLogDetailDialog(context, item),
+                    onEdit: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AddEditHabitView(habitToEdit: item.habit),
+                        ),
+                      );
+                    },
+                    onDelete: () => _showDeleteConfirmation(context, item.habit.id),
+                  ),
                 );
               }),
 
-            const SizedBox(height: 80), // spacing for FAB
+            const SizedBox(height: 110), // clearance for floating nav + FAB
           ],
         ),
       ),
@@ -288,12 +311,11 @@ class _DashboardViewState extends State<DashboardView> {
     final today = DateTime(now.year, now.month, now.day);
 
     return SizedBox(
-      height: 72,
+      height: 74,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 15,
         itemBuilder: (context, index) {
-          // 7 days before today to 7 days after today
           final date = today.subtract(Duration(days: 7 - index));
           final isSelected = DateFormat('yyyy-MM-dd').format(date) ==
               DateFormat('yyyy-MM-dd').format(habitVm.selectedDate);
@@ -302,22 +324,32 @@ class _DashboardViewState extends State<DashboardView> {
 
           return GestureDetector(
             onTap: () => habitVm.setSelectedDate(date),
-            child: Container(
-              width: 52,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 54,
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
                 color: isSelected
                     ? const Color(0xFF10B981)
-                    : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                borderRadius: BorderRadius.circular(16),
+                    : (isDark ? const Color(0xFF141C2E) : Colors.white),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isCurrentDay && !isSelected
                       ? const Color(0xFF10B981)
                       : (isSelected
                           ? const Color(0xFF10B981)
-                          : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                          : (isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0))),
                   width: isCurrentDay ? 1.5 : 1.0,
                 ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -336,9 +368,11 @@ class _DashboardViewState extends State<DashboardView> {
                   Text(
                     '${date.day}',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w800,
-                      color: isSelected ? Colors.white : null,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white : const Color(0xFF0F172A)),
                     ),
                   ),
                 ],
@@ -355,8 +389,15 @@ class _DashboardViewState extends State<DashboardView> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -377,7 +418,7 @@ class _DashboardViewState extends State<DashboardView> {
                 const SizedBox(height: 2),
                 Text(
                   insight.actionableStep,
-                  style: const TextStyle(fontSize: 11),
+                  style: const TextStyle(fontSize: 12),
                 ),
               ],
             ),
@@ -391,7 +432,7 @@ class _DashboardViewState extends State<DashboardView> {
     final categories = ['All', ...AppConstants.categories.map((c) => c.name)];
 
     return SizedBox(
-      height: 36,
+      height: 38,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
@@ -412,13 +453,13 @@ class _DashboardViewState extends State<DashboardView> {
               ),
               selected: isSelected,
               onSelected: (_) => habitVm.setSelectedCategory(cat),
-              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              backgroundColor: isDark ? const Color(0xFF141C2E) : const Color(0xFFF1F5F9),
               selectedColor: const Color(0xFF10B981).withValues(alpha: 0.15),
               showCheckmark: false,
               side: BorderSide(
                 color: isSelected
                     ? const Color(0xFF10B981)
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    : (isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0)),
               ),
             ),
           );
@@ -433,7 +474,7 @@ class _DashboardViewState extends State<DashboardView> {
         padding: const EdgeInsets.symmetric(vertical: 40),
         child: Column(
           children: [
-            const Icon(Icons.spa_rounded, size: 54, color: Color(0xFF10B981)),
+            const Icon(Icons.spa_rounded, size: 56, color: Color(0xFF10B981)),
             const SizedBox(height: 14),
             const Text(
               'No habits scheduled for this day',
@@ -453,7 +494,7 @@ class _DashboardViewState extends State<DashboardView> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ],

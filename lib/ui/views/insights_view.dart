@@ -4,6 +4,8 @@ import '../../data/models/behavioral_insight.dart';
 import '../viewmodels/insights_viewmodel.dart';
 import '../viewmodels/habit_viewmodel.dart';
 
+/// Behavioral insights feed presenting on-device psychological interventions,
+/// Habit Health Index score, and actionable experiments.
 class InsightsView extends StatelessWidget {
   const InsightsView({super.key});
 
@@ -66,13 +68,13 @@ class InsightsView extends StatelessWidget {
       body: RefreshIndicator(
         onRefresh: () => insightsVm.runBehavioralAnalysis(),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
             // 1. Momentum & Behavioral Health Score Card
             _buildMomentumHeroCard(context, insightsVm, isDark),
             const SizedBox(height: 20),
 
-            // 2. Filter Tabs
+            // 2. Filter Category Pills
             _buildFilterRow(insightsVm, isDark),
             const SizedBox(height: 16),
 
@@ -97,7 +99,7 @@ class InsightsView extends StatelessWidget {
                 return _buildInsightCard(context, insightsVm, insight, isDark);
               }),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 96), // Clearance for floating nav
           ],
         ),
       ),
@@ -124,17 +126,18 @@ class InsightsView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-              : [Colors.white, const Color(0xFFF8FAFC)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: isDark ? const Color(0xFF141C2E) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: stateColor.withValues(alpha: isDark ? 0.12 : 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +151,7 @@ class InsightsView extends StatelessWidget {
                   SizedBox(width: 8),
                   Text(
                     'Habit Health Index',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                   ),
                 ],
               ),
@@ -173,9 +176,9 @@ class InsightsView extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: score / 100,
+              value: (score / 100).clamp(0.0, 1.0),
               minHeight: 8,
-              backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
               color: stateColor,
             ),
           ),
@@ -184,7 +187,7 @@ class InsightsView extends StatelessWidget {
             stateLabel,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: stateColor,
             ),
           ),
@@ -202,7 +205,7 @@ class InsightsView extends StatelessWidget {
     final filters = ['All', 'Stacking', 'Timing', 'Weekend', 'Momentum'];
 
     return SizedBox(
-      height: 36,
+      height: 38,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
@@ -222,11 +225,11 @@ class InsightsView extends StatelessWidget {
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
                 fontSize: 12,
               ),
-              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              backgroundColor: isDark ? const Color(0xFF141C2E) : const Color(0xFFF1F5F9),
               side: BorderSide(
                 color: isSelected
                     ? const Color(0xFF10B981)
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    : (isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0)),
               ),
             ),
           );
@@ -240,8 +243,22 @@ class InsightsView extends StatelessWidget {
     final color = _getSeverityColor(insight.severity);
     final icon = _getTypeIcon(insight.type);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141C2E) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
@@ -252,10 +269,10 @@ class InsightsView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: isDark ? 0.2 : 0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: color, size: 22),
                 ),
@@ -274,7 +291,7 @@ class InsightsView extends StatelessWidget {
                       const SizedBox(height: 4),
                       // Psychology Principle Tag
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                         decoration: BoxDecoration(
                           color: const Color(0xFF6366F1).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
@@ -326,36 +343,36 @@ class InsightsView extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ACTIONABLE EXPERIMENT',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                            color: color,
-                          ),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ACTIONABLE EXPERIMENT',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: color,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          insight.actionableStep,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        insight.actionableStep,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildEmptyState(BuildContext context) {
     return Center(
@@ -386,7 +403,7 @@ class InsightsView extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ],

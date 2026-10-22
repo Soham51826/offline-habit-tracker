@@ -218,6 +218,53 @@ void main() {
       expect(timing.title, contains('Circadian Friction Alert'));
       expect(timing.message, contains('Morning'));
     });
+
+    test('Detects Momentum Milestone Celebrations at key thresholds (e.g. 21 days)', () {
+      final habit = Habit(
+        id: 'run-1',
+        title: 'Morning 5K',
+        category: 'Fitness & Movement',
+        colorValue: 0xFF10B981,
+        iconName: 'directions_walk',
+        createdAt: testDate.subtract(const Duration(days: 25)),
+        updatedAt: testDate,
+      );
+
+      final todayStr = dateFormat.format(testDate);
+      final logs = [
+        HabitLog(
+          id: 'today-log',
+          habitId: habit.id,
+          date: todayStr,
+          status: 'completed',
+          loggedAt: testDate,
+        ),
+      ];
+
+      final stats = HabitStats(
+        habitId: habit.id,
+        currentStreak: 21,
+        longestStreak: 21,
+        totalCompletions: 21,
+        completionRate7Days: 1.0,
+        completionRate30Days: 1.0,
+        allTimeCompletionRate: 1.0,
+        consistencyScore: 100,
+      );
+
+      final insights = BehavioralInsightsEngine.analyzeAll(
+        habits: [habit],
+        logs: logs,
+        statsMap: {habit.id: stats},
+        referenceTime: testDate,
+      );
+
+      expect(insights.any((i) => i.type == InsightType.momentumMilestone), isTrue);
+      final milestone = insights.firstWhere((i) => i.type == InsightType.momentumMilestone);
+      expect(milestone.severity, equals(InsightSeverity.celebration));
+      expect(milestone.title, contains('21-Day Streak Milestone'));
+      expect(milestone.psychologyPrinciple, contains('Automaticity'));
+    });
   });
 
   group('Model Serialization Tests', () {

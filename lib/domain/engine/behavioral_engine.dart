@@ -6,11 +6,20 @@ import '../../data/models/behavioral_insight.dart';
 import '../../data/models/habit_stats.dart';
 import 'local_coach_prompts.dart';
 
+/// Pure Dart on-device Behavioral Intelligence Engine.
+///
+/// Runs deterministic heuristics across SQLite habits and logs to synthesize personalized,
+/// actionable coaching experiments without sending any data to cloud servers. Grounded in:
+/// - James Clear (Atomic Habits: Habit Stacking, "Never Miss Twice")
+/// - Dr. BJ Fogg (Tiny Habits: Weekend Ability Scaling)
+/// - Roy Baumeister (Ego Depletion: Circadian Timing Alignment)
+/// - Daniel Kahneman (Prospect Theory: Streak Loss Aversion)
+/// - Phillippa Lally (Automaticity Milestones)
 class BehavioralInsightsEngine {
   static final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
   static const _uuid = Uuid();
 
-  /// Runs all behavioral psychology detection heuristics against local SQLite habit data.
+  /// Analyzes local habit data and returns an ordered list of high-impact behavioral interventions.
   static List<BehavioralInsight> analyzeAll({
     required List<Habit> habits,
     required List<HabitLog> logs,
@@ -28,21 +37,24 @@ class BehavioralInsightsEngine {
       logsByHabit.putIfAbsent(log.habitId, () => []).add(log);
     }
 
-    // 1. Streak-at-risk & Milestones & Never Miss Twice
+    // -------------------------------------------------------------
+    // 1. Streak-at-Risk, "Never Miss Twice", and Milestone Celebrations
+    // -------------------------------------------------------------
     for (final habit in habits) {
       final stats = statsMap[habit.id];
       if (stats == null) continue;
 
       final habitLogs = logsByHabit[habit.id] ?? [];
       final todayStr = _dateFormat.format(now);
-      final yesterdayStr = _dateFormat.format(now.subtract(const Duration(days: 1)));
+      final yesterday = now.subtract(const Duration(days: 1));
+      final yesterdayStr = _dateFormat.format(yesterday);
 
       final completedDates = habitLogs.where((l) => l.isCompleted).map((l) => l.date).toSet();
       final hasCompletedToday = completedDates.contains(todayStr);
       final hasCompletedYesterday = completedDates.contains(yesterdayStr);
 
-      // Rule A: Streak-at-Risk
-      // If current streak >= 3, and not completed today, and it's afternoon/evening (>= 14:00)
+      // Rule A: Streak-at-Risk (Loss Aversion)
+      // If current streak >= 3, not completed today, and local time is afternoon/evening (>= 14:00)
       if (stats.currentStreak >= 3 && !hasCompletedToday && now.hour >= 14) {
         final content = LocalCoachPrompts.formatStreakAtRisk(
           habitTitle: habit.title,
@@ -61,9 +73,9 @@ class BehavioralInsightsEngine {
         ));
       }
 
-      // Rule B: Never Miss Twice
-      // If yesterday was scheduled and missed, and today is scheduled and not yet done
-      if (habit.isScheduledForWeekday(now.subtract(const Duration(days: 1)).weekday) &&
+      // Rule B: Never Miss Twice (James Clear)
+      // If yesterday was scheduled and missed, and today is scheduled and pending
+      if (habit.isScheduledForWeekday(yesterday.weekday) &&
           !hasCompletedYesterday &&
           habit.isScheduledForWeekday(now.weekday) &&
           !hasCompletedToday &&
@@ -85,8 +97,8 @@ class BehavioralInsightsEngine {
         ));
       }
 
-      // Rule C: Milestone Celebration (e.g. 7, 14, 21, 30, 66, 100 days)
-      final milestones = [7, 14, 21, 30, 66, 100];
+      // Rule C: Milestone Celebration (Automaticity Curve - 7, 14, 21, 30, 66, 100 days)
+      const milestones = [7, 14, 21, 30, 66, 100];
       if (milestones.contains(stats.currentStreak) && hasCompletedToday) {
         final content = LocalCoachPrompts.formatMilestoneCelebration(
           habitTitle: habit.title,
@@ -106,14 +118,14 @@ class BehavioralInsightsEngine {
       }
     }
 
-    // 2. Habit Stacking Analysis
-    // Identify Anchor Habits (consistency >= 80% over at least 7 logs)
+    // -------------------------------------------------------------
+    // 2. Habit Stacking Heuristic (Procedural Memory Anchoring)
+    // -------------------------------------------------------------
     final anchorCandidates = habits.where((h) {
       final stats = statsMap[h.id];
       return stats != null && stats.completionRate30Days >= 0.75 && stats.totalCompletions >= 5;
     }).toList();
 
-    // Identify habits in need of anchoring (consistency < 55% or unanchored with low streak)
     final needyHabits = habits.where((h) {
       final stats = statsMap[h.id];
       return stats != null &&
@@ -123,13 +135,11 @@ class BehavioralInsightsEngine {
     }).toList();
 
     if (anchorCandidates.isNotEmpty && needyHabits.isNotEmpty) {
-      // Pick the best anchor (highest consistency)
       anchorCandidates.sort((a, b) =>
           (statsMap[b.id]?.completionRate30Days ?? 0).compareTo(statsMap[a.id]?.completionRate30Days ?? 0));
       final bestAnchor = anchorCandidates.first;
       final anchorStats = statsMap[bestAnchor.id]!;
 
-      // Pick the habit that needs it most
       needyHabits.sort((a, b) =>
           (statsMap[a.id]?.completionRate30Days ?? 0).compareTo(statsMap[b.id]?.completionRate30Days ?? 0));
       final targetHabit = needyHabits.first;
@@ -155,10 +165,11 @@ class BehavioralInsightsEngine {
       ));
     }
 
-    // 3. Weekend Slump Detection
-    // Analyze weekday (Mon-Fri) vs weekend (Sat-Sun) completion rates
+    // -------------------------------------------------------------
+    // 3. Weekend Slump Detection (Fogg Behavior Model: Ability Scaling)
+    // -------------------------------------------------------------
     for (final habit in habits) {
-      if (habit.frequencyType == 'weekdays') continue; // only analyze habits meant for weekends too
+      if (habit.frequencyType == 'weekdays') continue; // Skip weekday-only habits
 
       final habitLogs = logsByHabit[habit.id] ?? [];
       if (habitLogs.length < 6) continue;
@@ -170,7 +181,7 @@ class BehavioralInsightsEngine {
 
       final completedSet = habitLogs.where((l) => l.isCompleted).map((l) => l.date).toSet();
 
-      // Look back 21 days
+      // Analyze rolling 21-day window
       for (int i = 0; i < 21; i++) {
         final d = now.subtract(Duration(days: i));
         final dStr = _dateFormat.format(d);
@@ -213,17 +224,17 @@ class BehavioralInsightsEngine {
       }
     }
 
-    // 4. Optimal Timing / Circadian Friction Detection
+    // -------------------------------------------------------------
+    // 4. Circadian Friction / Optimal Timing (Roy Baumeister: Ego Depletion)
+    // -------------------------------------------------------------
     for (final habit in habits) {
       final habitLogs = logsByHabit[habit.id] ?? [];
       final completedLogs = habitLogs.where((l) => l.isCompleted).toList();
       if (completedLogs.length < 7) continue;
 
-      // Group by time windows
-      // Morning (05:00 - 11:59), Afternoon (12:00 - 16:59), Evening/Night (17:00 - 04:59)
-      int morningCount = 0;
-      int afternoonCount = 0;
-      int eveningCount = 0;
+      int morningCount = 0;   // 05:00 - 11:59
+      int afternoonCount = 0; // 12:00 - 16:59
+      int eveningCount = 0;   // 17:00 - 04:59
 
       for (final log in completedLogs) {
         final h = log.loggedAt.hour;
@@ -241,7 +252,6 @@ class BehavioralInsightsEngine {
       final aRate = afternoonCount / total;
       final eRate = eveningCount / total;
 
-      // Check if there is a stark preference (>60% in one, <20% in another)
       String? bestWindow;
       double bestRate = 0.0;
       String? worstWindow;
@@ -287,7 +297,9 @@ class BehavioralInsightsEngine {
       }
     }
 
-    // 5. Cognitive Overload Detection
+    // -------------------------------------------------------------
+    // 5. Cognitive Overload Detection (Willpower Budgeting)
+    // -------------------------------------------------------------
     if (habits.length >= 6) {
       double total30DayRateSum = 0;
       for (final habit in habits) {
@@ -314,9 +326,18 @@ class BehavioralInsightsEngine {
       }
     }
 
-    // Sort by severity: urgent first, then warning, then suggestion, then celebration
-    insights.sort((a, b) => a.severity.index.compareTo(b.severity.index));
+    // Deduplicate insights with identical type and habitId
+    final Map<String, BehavioralInsight> uniqueMap = {};
+    for (final insight in insights) {
+      final key = '${insight.type}_${insight.habitId}';
+      uniqueMap[key] = insight;
+    }
 
-    return insights;
+    final uniqueList = uniqueMap.values.toList();
+
+    // Priority sorting: urgent > warning > suggestion > celebration
+    uniqueList.sort((a, b) => a.severity.index.compareTo(b.severity.index));
+
+    return uniqueList;
   }
 }

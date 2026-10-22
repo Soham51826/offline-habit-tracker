@@ -7,18 +7,24 @@ import '../models/habit.dart';
 import '../models/habit_log.dart';
 import '../models/behavioral_insight.dart';
 
+/// Single source of truth for the on-device SQLite database.
+///
+/// Manages schema creation, migrations, table indices, and performant ACID-compliant
+/// transactions for habits, daily execution logs, behavioral insights, and app preferences.
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
 
   DatabaseHelper._internal();
 
+  /// Returns the singleton database handle, lazily initializing on first access.
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
   }
 
+  /// Initializes SQLite database with cross-platform desktop/web/mobile support.
   Future<Database> _initDatabase() async {
     if (kIsWeb) {
       final factory = databaseFactoryFfiWeb;
@@ -41,8 +47,9 @@ class DatabaseHelper {
     );
   }
 
+  /// Creates all application tables with relational constraints and indexing.
   Future<void> _createDb(Database db, int version) async {
-    // Habits Table
+    // 1. Habits Table
     await db.execute('''
       CREATE TABLE habits (
         id TEXT PRIMARY KEY,
@@ -63,7 +70,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Habit Logs Table
+    // 2. Habit Logs Table
     await db.execute('''
       CREATE TABLE habit_logs (
         id TEXT PRIMARY KEY,
@@ -79,12 +86,13 @@ class DatabaseHelper {
       )
     ''');
 
-    // Indexes for fast querying
+    // High-performance B-tree indexes for zero-latency queries
     await db.execute('CREATE INDEX idx_logs_habit_id ON habit_logs(habit_id)');
     await db.execute('CREATE INDEX idx_logs_date ON habit_logs(date)');
     await db.execute('CREATE INDEX idx_logs_habit_date ON habit_logs(habit_id, date)');
+    await db.execute('CREATE INDEX idx_logs_status ON habit_logs(status)');
 
-    // Behavioral Insights Table
+    // 3. Behavioral Insights Table
     await db.execute('''
       CREATE TABLE behavioral_insights (
         id TEXT PRIMARY KEY,
@@ -103,7 +111,7 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_insights_type ON behavioral_insights(type)');
     await db.execute('CREATE INDEX idx_insights_dismissed ON behavioral_insights(is_dismissed)');
 
-    // Key-Value App Settings Table
+    // 4. Key-Value App Settings Table
     await db.execute('''
       CREATE TABLE app_settings (
         key TEXT PRIMARY KEY,
@@ -113,14 +121,17 @@ class DatabaseHelper {
   }
 
   // -------------------------------------------------------------
-  // Habits CRUD
+  // Habits CRUD Operations
   // -------------------------------------------------------------
+
+  /// Inserts a new habit or updates an existing habit record.
   Future<int> insertHabit(Habit habit) async {
     final db = await database;
     return await db.insert('habits', habit.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  /// Updates an existing habit definition.
   Future<int> updateHabit(Habit habit) async {
     final db = await database;
     return await db.update(
@@ -131,13 +142,14 @@ class DatabaseHelper {
     );
   }
 
+  /// Deletes a habit and all associated daily logs via cascade deletion.
   Future<int> deleteHabit(String habitId) async {
     final db = await database;
-    // SQLite cascade will handle habit_logs
     await db.delete('habit_logs', where: 'habit_id = ?', whereArgs: [habitId]);
     return await db.delete('habits', where: 'id = ?', whereArgs: [habitId]);
   }
 
+  /// Retrieves a specific habit by its unique identifier.
   Future<Habit?> getHabitById(String id) async {
     final db = await database;
     final maps = await db.query('habits', where: 'id = ?', whereArgs: [id]);
@@ -147,6 +159,7 @@ class DatabaseHelper {
     return null;
   }
 
+  /// Retrieves all habits, optionally including archived records.
   Future<List<Habit>> getAllHabits({bool includeArchived = false}) async {
     final db = await database;
     final where = includeArchived ? null : 'is_archived = 0';
@@ -159,8 +172,10 @@ class DatabaseHelper {
   }
 
   // -------------------------------------------------------------
-  // Habit Logs CRUD
+  // Habit Logs CRUD Operations & Optimized Queries
   // -------------------------------------------------------------
+
+  /// Inserts or updates a daily log execution for a habit.
   Future<int> insertOrUpdateLog(HabitLog log) async {
     final db = await database;
     return await db.insert(
@@ -170,6 +185,7 @@ class DatabaseHelper {
     );
   }
 
+  /// Deletes a specific day's log for a habit.
   Future<int> deleteLog(String habitId, String date) async {
     final db = await database;
     return await db.delete(
@@ -179,6 +195,7 @@ class DatabaseHelper {
     );
   }
 
+  /// Retrieves a specific day's log for a habit.
   Future<HabitLog?> getLog(String habitId, String date) async {
     final db = await database;
     final maps = await db.query(
@@ -192,6 +209,7 @@ class DatabaseHelper {
     return null;
   }
 
+  /// Retrieves all habit logs recorded on a specific date (YYYY-MM-DD).
   Future<List<HabitLog>> getLogsForDate(String date) async {
     final db = await database;
     final result = await db.query(
@@ -202,6 +220,7 @@ class DatabaseHelper {
     return result.map((m) => HabitLog.fromMap(m)).toList();
   }
 
+  /// Retrieves history logs for a specific habit.
   Future<List<HabitLog>> getLogsForHabit(String habitId, {int? limit}) async {
     final db = await database;
     final result = await db.query(
@@ -214,6 +233,7 @@ class DatabaseHelper {
     return result.map((m) => HabitLog.fromMap(m)).toList();
   }
 
+  /// Returns all logs within an inclusive date range (YYYY-MM-DD).
   Future<List<HabitLog>> getLogsDateRange(String startDate, String endDate) async {
     final db = await database;
     final result = await db.query(
@@ -225,6 +245,27 @@ class DatabaseHelper {
     return result.map((m) => HabitLog.fromMap(m)).toList();
   }
 
+  /// Fast SQL aggregate query counting completed sessions for a habit in a date window.
+  Future<int> getCompletionsCountInDateRange(String habitId, String startDate, String endDate) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      '''
+      SELECT COUNT(*) as count 
+      FROM habit_logs 
+      WHERE habit_id = ? 
+        AND date >= ? 
+        AND date <= ? 
+        AND status = 'completed'
+      ''',
+      [habitId, startDate, endDate],
+    );
+    if (result.isNotEmpty && result.first['count'] != null) {
+      return (result.first['count'] as num).toInt();
+    }
+    return 0;
+  }
+
+  /// Retrieves all habit logs across the entire database.
   Future<List<HabitLog>> getAllLogs() async {
     final db = await database;
     final result = await db.query('habit_logs', orderBy: 'date ASC');
@@ -232,8 +273,10 @@ class DatabaseHelper {
   }
 
   // -------------------------------------------------------------
-  // Behavioral Insights CRUD
+  // Behavioral Insights CRUD Operations
   // -------------------------------------------------------------
+
+  /// Batches insertions of fresh behavioral insights.
   Future<void> saveInsights(List<BehavioralInsight> insights) async {
     final db = await database;
     final batch = db.batch();
@@ -247,6 +290,7 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
+  /// Retrieves all active (non-dismissed) behavioral insights.
   Future<List<BehavioralInsight>> getActiveInsights() async {
     final db = await database;
     final result = await db.query(
@@ -257,6 +301,7 @@ class DatabaseHelper {
     return result.map((m) => BehavioralInsight.fromMap(m)).toList();
   }
 
+  /// Marks a behavioral insight as dismissed by the user.
   Future<int> dismissInsight(String insightId) async {
     final db = await database;
     return await db.update(
@@ -267,14 +312,17 @@ class DatabaseHelper {
     );
   }
 
+  /// Clears all stored insights.
   Future<int> clearAllInsights() async {
     final db = await database;
     return await db.delete('behavioral_insights');
   }
 
   // -------------------------------------------------------------
-  // App Settings CRUD
+  // App Settings CRUD Operations
   // -------------------------------------------------------------
+
+  /// Sets a persistent key-value configuration.
   Future<void> setSetting(String key, String value) async {
     final db = await database;
     await db.insert(
@@ -284,6 +332,7 @@ class DatabaseHelper {
     );
   }
 
+  /// Retrieves a persistent key-value configuration.
   Future<String?> getSetting(String key) async {
     final db = await database;
     final maps = await db.query(
@@ -298,8 +347,10 @@ class DatabaseHelper {
   }
 
   // -------------------------------------------------------------
-  // Maintenance & Reset
+  // Maintenance & Nuclear Reset
   // -------------------------------------------------------------
+
+  /// Permanently deletes all records across all tables.
   Future<void> clearAllData() async {
     final db = await database;
     await db.delete('habit_logs');
