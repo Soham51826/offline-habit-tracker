@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'services/notification_service.dart';
 import 'services/background_worker.dart';
@@ -11,6 +12,21 @@ import 'ui/views/main_navigation_view.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables securely (supports local .env and fresh clone .env.example)
+  try {
+    await dotenv.load(fileName: "assets/env/.env");
+  } catch (_) {
+    try {
+      await dotenv.load(fileName: ".env");
+    } catch (_) {
+      try {
+        await dotenv.load(fileName: "assets/env/.env.example");
+      } catch (e) {
+        debugPrint('Environment initialized with default fallbacks: $e');
+      }
+    }
+  }
+
   // Initialize Local Notifications
   await NotificationService.instance.initialize();
 
@@ -18,11 +34,11 @@ void main() async {
   await BackgroundWorkerService.instance.initialize();
   await BackgroundWorkerService.instance.schedulePeriodicHabitCheck();
 
-  runApp(const OfflineHabitTrackerApp());
+  runApp(const HabitForgeApp());
 }
 
-class OfflineHabitTrackerApp extends StatelessWidget {
-  const OfflineHabitTrackerApp({super.key});
+class HabitForgeApp extends StatelessWidget {
+  const HabitForgeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,11 +55,11 @@ class OfflineHabitTrackerApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Offline Habit Tracker',
+        title: 'HabitForge',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+        darkTheme: AppTheme.lightTheme,
+        themeMode: ThemeMode.light,
         home: const MainNavigationView(),
       ),
     );

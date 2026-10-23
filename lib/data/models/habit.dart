@@ -12,6 +12,10 @@ class Habit {
   final String? reminderTime; // "08:30"
   final String? anchorHabitId; // ID of another habit to stack after
   final bool isArchived;
+  final double? latitude;
+  final double? longitude;
+  final String? locationName;
+  final double geofenceRadius; // in meters
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,11 +33,16 @@ class Habit {
     this.reminderTime,
     this.anchorHabitId,
     this.isArchived = false,
+    this.latitude,
+    this.longitude,
+    this.locationName,
+    this.geofenceRadius = 150.0,
     required this.createdAt,
     required this.updatedAt,
   });
 
   bool get isNumeric => targetCount > 1;
+  bool get hasLocation => latitude != null && longitude != null;
 
   bool isScheduledForWeekday(int weekday) {
     // DateTime weekday: 1 = Monday, 7 = Sunday
@@ -61,6 +70,10 @@ class Habit {
     String? reminderTime,
     String? anchorHabitId,
     bool? isArchived,
+    double? latitude,
+    double? longitude,
+    String? locationName,
+    double? geofenceRadius,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -78,6 +91,10 @@ class Habit {
       reminderTime: reminderTime ?? this.reminderTime,
       anchorHabitId: anchorHabitId ?? this.anchorHabitId,
       isArchived: isArchived ?? this.isArchived,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      locationName: locationName ?? this.locationName,
+      geofenceRadius: geofenceRadius ?? this.geofenceRadius,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -98,6 +115,10 @@ class Habit {
       'reminder_time': reminderTime,
       'anchor_habit_id': anchorHabitId,
       'is_archived': isArchived ? 1 : 0,
+      'latitude': latitude,
+      'longitude': longitude,
+      'location_name': locationName,
+      'geofence_radius': geofenceRadius,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -118,6 +139,10 @@ class Habit {
       reminderTime: map['reminder_time'] as String?,
       anchorHabitId: map['anchor_habit_id'] as String?,
       isArchived: (map['is_archived'] as int?) == 1,
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
+      locationName: map['location_name'] as String?,
+      geofenceRadius: (map['geofence_radius'] as num?)?.toDouble() ?? 150.0,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );

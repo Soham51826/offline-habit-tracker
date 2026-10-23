@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:habit_tracker/main.dart';
 import 'package:habit_tracker/ui/viewmodels/habit_viewmodel.dart';
@@ -11,9 +12,10 @@ void main() {
     // Initialize FFI for local desktop/test database execution
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    dotenv.loadFromString(envString: 'GEMINI_API_KEY=\nGOOGLE_MAPS_API_KEY=\n');
   });
 
-  testWidgets('OfflineHabitTrackerApp builds and displays navigation tabs', (WidgetTester tester) async {
+  testWidgets('HabitForgeApp builds and displays navigation tabs', (WidgetTester tester) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -21,14 +23,14 @@ void main() {
           ChangeNotifierProvider(create: (_) => InsightsViewModel()),
           ChangeNotifierProvider(create: (_) => StatsViewModel()),
         ],
-        child: const OfflineHabitTrackerApp(),
+        child: const HabitForgeApp(),
       ),
     );
 
     await tester.pump();
 
     // Verify app title and navigation items exist
-    expect(find.text('Offline Habit Tracker'), findsOneWidget);
+    expect(find.text('HabitForge'), findsOneWidget);
     expect(find.text('Today'), findsOneWidget);
     expect(find.text('Insights'), findsOneWidget);
     expect(find.text('Analytics'), findsOneWidget);

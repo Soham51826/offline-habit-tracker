@@ -258,6 +258,37 @@ class _HabitCardState extends State<HabitCard> with SingleTickerProviderStateMix
                                       ],
                                     ),
                                   ),
+                                if (habit.hasLocation && habit.locationName != null && habit.locationName!.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF059669).withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFF059669).withValues(alpha: 0.3),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.location_on_rounded,
+                                          size: 11,
+                                          color: Color(0xFF059669),
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          habit.locationName!,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF059669),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 StreakBadge(
                                   streakDays: widget.item.stats.currentStreak,
                                   isSmall: true,

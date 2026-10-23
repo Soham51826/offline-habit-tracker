@@ -102,7 +102,9 @@ class _DashboardViewState extends State<DashboardView> {
                     controller: noteController,
                     maxLines: 2,
                     decoration: const InputDecoration(
-                      hintText: 'Add an optional reflection or note...',
+                      labelText: 'Daily Reflection / Note (Optional)',
+                      hintText: 'Add an optional reflection or note on obstacles/wins...',
+                      helperText: 'Capture context to improve behavioral analysis',
                       prefixIcon: Icon(Icons.notes_rounded),
                     ),
                   ),
@@ -182,7 +184,7 @@ class _DashboardViewState extends State<DashboardView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Offline Habit Tracker',
+              'HabitForge',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             Text(

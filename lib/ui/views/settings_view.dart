@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/background_worker.dart';
+import '../../services/gemini_ai_service.dart';
+import '../../services/geofence_service.dart';
 import '../../services/notification_service.dart';
 import '../viewmodels/habit_viewmodel.dart';
+
 
 /// Settings and diagnostic tools view for WorkManager background tasks,
 /// battery optimization guidelines, demo data seeding, and database reset.
@@ -119,6 +122,119 @@ class _SettingsViewState extends State<SettingsView> {
                   ),
                 ],
               ),
+            ),
+          ),
+          // 1.5. Online Services & API Security Diagnostics
+          _buildSectionHeader('Online APIs & Security (.env)', Icons.cloud_done_rounded),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF141C2E) : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.auto_awesome_rounded, color: Color(0xFF4F46E5), size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Google Gemini AI (Smart Insights)',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: GeminiAiService.instance.hasApiKey
+                            ? const Color(0xFFD1FAE5)
+                            : const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        GeminiAiService.instance.hasApiKey ? 'Live API Key' : 'Local Fallback',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: GeminiAiService.instance.hasApiKey
+                              ? const Color(0xFF059669)
+                              : const Color(0xFFD97706),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Weekly SQLite logs are processed by Gemini 1.5 Flash. Model keys are isolated in .env and omitted from source control.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.35),
+                ),
+                const Divider(height: 24),
+                Row(
+                  children: [
+                    const Icon(Icons.map_rounded, color: Color(0xFF0891B2), size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Google Maps SDK & Geofencing',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD1FAE5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Active SDK',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF059669),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Supports live pin-dropping on Google Maps and geodesic proximity calculations for automated check-ins upon campus or gym arrival.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.35),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final habits = context.read<HabitViewModel>().habitsWithLogs.map((e) => e.habit).toList();
+                      final triggered = await GeofenceService.instance.checkProximityAndNotify(habits);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(triggered.isNotEmpty
+                                ? '📍 Geofence proximity matched for: ${triggered.join(", ")}!'
+                                : '📍 GPS evaluated: No geofenced habits within immediate range.'),
+                            backgroundColor: const Color(0xFF059669),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.my_location_rounded, size: 16),
+                    label: const Text('Evaluate GPS Proximity Now'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF0891B2),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),

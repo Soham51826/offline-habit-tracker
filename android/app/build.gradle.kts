@@ -15,6 +15,19 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    val rootEnv = rootProject.file("../.env")
+    val assetEnv = rootProject.file("../assets/env/.env")
+    val envFile = if (assetEnv.exists()) assetEnv else rootEnv
+    var mapsApiKey = ""
+    if (envFile.exists()) {
+        envFile.forEachLine { line ->
+            val trimmed = line.trim()
+            if (trimmed.startsWith("GOOGLE_MAPS_API_KEY=")) {
+                mapsApiKey = trimmed.substringAfter("GOOGLE_MAPS_API_KEY=").trim()
+            }
+        }
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.offlinetracker.habits.habit_tracker"
@@ -24,6 +37,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        manifestPlaceholders["mapsApiKey"] = if (mapsApiKey.isNotEmpty()) mapsApiKey else "AIzaSy_DEFAULT_KEY"
     }
 
     buildTypes {

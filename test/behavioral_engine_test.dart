@@ -321,5 +321,30 @@ void main() {
       expect(reconstructed.notes, equals('Felt great today'));
       expect(reconstructed.moodScore, equals(5));
     });
+
+    test('Habit with Google Maps geofence toMap and fromMap roundtrip preserves location data', () {
+      final geoHabit = Habit(
+        id: 'geo-habit-1',
+        title: 'Gym Workout',
+        category: 'Fitness & Movement',
+        colorValue: 0xFFF43F5E,
+        iconName: 'fitness_center',
+        latitude: 19.0760,
+        longitude: 72.8777,
+        locationName: 'Campus Fitness Center',
+        geofenceRadius: 200.0,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 2),
+      );
+
+      final map = geoHabit.toMap();
+      final reconstructed = Habit.fromMap(map);
+
+      expect(reconstructed.hasLocation, isTrue);
+      expect(reconstructed.latitude, equals(19.0760));
+      expect(reconstructed.longitude, equals(72.8777));
+      expect(reconstructed.locationName, equals('Campus Fitness Center'));
+      expect(reconstructed.geofenceRadius, equals(200.0));
+    });
   });
 }

@@ -31,8 +31,9 @@ class DatabaseHelper {
       return await factory.openDatabase(
         'offline_habit_tracker.db',
         options: OpenDatabaseOptions(
-          version: 1,
+          version: 2,
           onCreate: _createDb,
+          onUpgrade: _onUpgrade,
         ),
       );
     }
@@ -42,9 +43,24 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDb,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  /// Handles schema migrations across versions.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE habits ADD COLUMN latitude REAL');
+        await db.execute('ALTER TABLE habits ADD COLUMN longitude REAL');
+        await db.execute('ALTER TABLE habits ADD COLUMN location_name TEXT');
+        await db.execute('ALTER TABLE habits ADD COLUMN geofence_radius REAL DEFAULT 150.0');
+      } catch (e) {
+        debugPrint('Columns may already exist during migration: $e');
+      }
+    }
   }
 
   /// Creates all application tables with relational constraints and indexing.
@@ -65,6 +81,10 @@ class DatabaseHelper {
         reminder_time TEXT,
         anchor_habit_id TEXT,
         is_archived INTEGER DEFAULT 0,
+        latitude REAL,
+        longitude REAL,
+        location_name TEXT,
+        geofence_radius REAL DEFAULT 150.0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )

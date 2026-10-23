@@ -23,109 +23,31 @@ class AppTheme {
   static const Color darkSubtext = Color(0xFF94A3B8);    // Muted Slate 400 Text
   static const Color darkGlow = Color(0x3310B981);       // Ambient Emerald Glow
 
-  // Crisp Light Mode Palette
+  /// Crisp Light Mode Palette (Material Design 3 High Contrast)
   static const Color lightBackground = Color(0xFFF8FAFC); // Crisp Slate 50
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightCard = Color(0xFFFFFFFF);
-  static const Color lightBorder = Color(0xFFE2E8F0);    // Slate 200
-  static const Color lightSubtext = Color(0xFF64748B);   // Slate 500
+  static const Color lightSurface = Color(0xFFFFFFFF);    // Pure White Surface
+  static const Color lightCard = Color(0xFFFFFFFF);       // Elevated Card Surface
+  static const Color lightBorder = Color(0xFFE2E8F0);     // Structural Slate 200 Border
+  static const Color lightBorderActive = Color(0xFFCBD5E1); // Slate 300 for active inputs
+  static const Color lightTextPrimary = Color(0xFF0F172A); // High Contrast Slate 900
+  static const Color lightTextSecondary = Color(0xFF475569); // Slate 600
+  static const Color lightSubtext = Color(0xFF64748B);    // Slate 500
+  static const Color lightEmerald = Color(0xFF059669);    // High Contrast Emerald 600
+  static const Color lightIndigo = Color(0xFF4F46E5);     // Deep Indigo 600
 
-  /// Dark Theme with sleek glassmorphic elevation and deep slate contrast
-  static ThemeData get darkTheme {
-    final colorScheme = ColorScheme.dark(
-      primary: primaryEmerald,
-      secondary: primaryIndigo,
-      tertiary: accentCyan,
-      error: accentRose,
-      surface: darkSurface,
-      surfaceContainerHighest: darkBorder,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onSurface: const Color(0xFFF8FAFC),
-      outline: darkBorder,
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: darkBackground,
-      colorScheme: colorScheme,
-      cardTheme: CardThemeData(
-        color: darkCard,
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: darkBorder, width: 1),
-        ),
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: darkBackground,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: TextStyle(
-          fontSize: 21,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
-          letterSpacing: -0.6,
-        ),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.transparent,
-        selectedItemColor: primaryEmerald,
-        unselectedItemColor: darkSubtext,
-        type: BottomNavigationBarType.fixed,
-        elevation: 0,
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primaryEmerald,
-        foregroundColor: Colors.white,
-        elevation: 6,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
-      ),
-      chipTheme: ChipThemeData(
-        backgroundColor: darkSurface,
-        selectedColor: primaryEmerald.withValues(alpha: 0.2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: darkBorder),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: darkSurface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: darkBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: darkBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primaryEmerald, width: 1.5),
-        ),
-      ),
-    );
-  }
-
-  /// Light Theme with clean slate aesthetics
+  /// Material Design 3 Light Theme with crisp contrast, legible typography, and elevated cards
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.light(
-      primary: primaryEmerald,
-      secondary: primaryIndigo,
+      primary: lightEmerald,
+      secondary: lightIndigo,
       tertiary: accentCyan,
-      error: accentRose,
+      error: const Color(0xFFDC2626),
       surface: lightSurface,
-      surfaceContainerHighest: lightBorder,
+      surfaceContainerHighest: const Color(0xFFF1F5F9),
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onSurface: const Color(0xFF0F172A),
-      outline: lightBorder,
+      onSurface: lightTextPrimary,
+      outline: lightBorderActive,
     );
 
     return ThemeData(
@@ -135,34 +57,36 @@ class AppTheme {
       colorScheme: colorScheme,
       cardTheme: CardThemeData(
         color: lightCard,
-        elevation: 0,
+        elevation: 1,
         margin: EdgeInsets.zero,
+        shadowColor: const Color(0x0A0F172A),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: lightBorder, width: 1),
+          side: const BorderSide(color: lightBorder, width: 1.2),
         ),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: lightBackground,
-        foregroundColor: Color(0xFF0F172A),
+        foregroundColor: lightTextPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          fontSize: 21,
+          fontSize: 22,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF0F172A),
+          color: lightTextPrimary,
           letterSpacing: -0.6,
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.transparent,
-        selectedItemColor: primaryEmerald,
+        backgroundColor: Colors.white,
+        selectedItemColor: lightEmerald,
         unselectedItemColor: lightSubtext,
         type: BottomNavigationBarType.fixed,
-        elevation: 0,
+        elevation: 8,
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primaryEmerald,
+        backgroundColor: lightEmerald,
         foregroundColor: Colors.white,
         elevation: 4,
         shape: RoundedRectangleBorder(
@@ -170,29 +94,94 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: lightSurface,
-        selectedColor: primaryEmerald.withValues(alpha: 0.15),
+        backgroundColor: const Color(0xFFF1F5F9),
+        selectedColor: const Color(0xFFD1FAE5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: const BorderSide(color: lightBorder),
         ),
+        labelStyle: const TextStyle(
+          color: lightTextPrimary,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: lightSurface,
+        fillColor: Colors.white,
+        labelStyle: const TextStyle(
+          color: lightTextSecondary,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+        hintStyle: const TextStyle(
+          color: Color(0xFF94A3B8),
+          fontWeight: FontWeight.w400,
+          fontSize: 14,
+        ),
+        helperStyle: const TextStyle(
+          color: lightSubtext,
+          fontSize: 12,
+        ),
+        errorStyle: const TextStyle(
+          color: Color(0xFFDC2626),
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+        prefixIconColor: lightSubtext,
+        suffixIconColor: lightSubtext,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: lightBorder),
+          borderSide: const BorderSide(color: lightBorderActive, width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: lightBorder),
+          borderSide: const BorderSide(color: lightBorderActive, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primaryEmerald, width: 1.5),
+          borderSide: const BorderSide(color: lightEmerald, width: 2.0),
         ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDC2626), width: 2.0),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: lightEmerald,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: lightBorder),
+        ),
+        titleTextStyle: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          color: lightTextPrimary,
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: lightBorder,
+        thickness: 1,
+        space: 24,
       ),
     );
   }
+
+  /// Dark Theme aliased to Light Theme for Light Theme Exclusivity requirement
+  static ThemeData get darkTheme => lightTheme;
 }
+

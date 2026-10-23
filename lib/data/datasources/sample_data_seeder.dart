@@ -63,6 +63,10 @@ class SampleDataSeeder {
       targetCount: 30,
       unit: 'minutes',
       reminderTime: '20:00',
+      latitude: 19.0790,
+      longitude: 72.8800,
+      locationName: 'University Central Library',
+      geofenceRadius: 150.0,
       createdAt: today.subtract(const Duration(days: 24)),
       updatedAt: today,
     );
@@ -79,6 +83,10 @@ class SampleDataSeeder {
       targetCount: 1,
       unit: 'times',
       reminderTime: '08:00',
+      latitude: 19.0760,
+      longitude: 72.8777,
+      locationName: 'Campus Fitness Center',
+      geofenceRadius: 200.0,
       createdAt: today.subtract(const Duration(days: 21)),
       updatedAt: today,
     );
