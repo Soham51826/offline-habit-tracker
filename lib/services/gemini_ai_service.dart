@@ -73,17 +73,20 @@ class GeminiAiService {
       return _generateOfflineFallbackCoaching(userName, habits, statsMap);
     }
 
-    try {
-      final model = GenerativeModel(
-        model: 'gemini-1.5-flash',
-        apiKey: key,
-        generationConfig: GenerationConfig(
-          temperature: 0.7,
-          maxOutputTokens: 600,
-        ),
-      );
+    final candidateModels = ['gemini-flash-lite-latest', 'gemini-flash-latest', 'gemini-3.8-flash'];
 
-      final prompt = '''
+    for (final modelName in candidateModels) {
+      try {
+        final model = GenerativeModel(
+          model: modelName,
+          apiKey: key,
+          generationConfig: GenerationConfig(
+            temperature: 0.7,
+            maxOutputTokens: 600,
+          ),
+        );
+
+        final prompt = '''
 You are "HabitForge AI Coach", an empathetic, elite behavioral psychologist and habit formation expert (grounded in BJ Fogg's Tiny Habits and James Clear's Atomic Habits).
 
 Analyze the following SQLite habit tracking records for $userName:
@@ -97,20 +100,21 @@ Instructions:
 5. Limit the response to 3-4 short paragraphs or bulleted takeaways.
 ''';
 
-      final response = await model.generateContent([Content.text(prompt)]);
-      final text = response.text?.trim();
+        final response = await model.generateContent([Content.text(prompt)]);
+        final text = response.text?.trim();
 
-      if (text != null && text.isNotEmpty) {
-        return text;
-      } else {
-        return _generateOfflineFallbackCoaching(userName, habits, statsMap);
+        if (text != null && text.isNotEmpty) {
+          return text;
+        }
+      } catch (e) {
+        debugPrint('Gemini model ($modelName) error: $e');
+        // Try next candidate model
       }
-    } catch (e) {
-      debugPrint('Gemini API Error: $e');
-      return '$userName, here is your behavioral habit analysis:\n\n'
-          '${_generateOfflineFallbackCoaching(userName, habits, statsMap)}\n\n'
-          '*(Note: Live Gemini API encountered a network/key issue: $e. Using local behavioral heuristics.)*';
     }
+
+    return '$userName, here is your behavioral habit analysis:\n\n'
+        '${_generateOfflineFallbackCoaching(userName, habits, statsMap)}\n\n'
+        '*(Note: Live Gemini API encountered a network or quota delay. Provided via local behavioral heuristics.)*';
   }
 
   /// High quality behavioral coaching fallback when offline or key is missing.
