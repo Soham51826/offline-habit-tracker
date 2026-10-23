@@ -149,16 +149,22 @@ class InsightsView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.psychology_rounded, color: Color(0xFF10B981), size: 24),
-                  SizedBox(width: 8),
-                  Text(
-                    'Habit Health Index',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                  ),
-                ],
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.psychology_rounded, color: Color(0xFF10B981), size: 24),
+                    SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Habit Health Index',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -457,21 +463,27 @@ class InsightsView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
-                  children: [
-                    Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Gemini AI Smart Coach',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        letterSpacing: -0.2,
+                const Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Gemini AI Smart Coach',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            letterSpacing: -0.2,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -479,7 +491,7 @@ class InsightsView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
-                    'gemini-1.5-flash',
+                    'gemini-flash',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 11,
@@ -550,10 +562,14 @@ class InsightsView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
                     children: [
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             width: 8,
@@ -639,9 +655,12 @@ class InsightsView extends StatelessWidget {
                   children: [
                     Icon(Icons.shield_outlined, size: 13, color: Color(0xFF94A3B8)),
                     SizedBox(width: 5),
-                    Text(
-                      'API Key secured via flutter_dotenv • Local SQLite data source',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    Expanded(
+                      child: Text(
+                        'API Key secured via flutter_dotenv • Local SQLite data source',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

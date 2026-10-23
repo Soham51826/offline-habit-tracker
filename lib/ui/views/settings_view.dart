@@ -213,15 +213,48 @@ class _SettingsViewState extends State<SettingsView> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () async {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (ctx) => const Center(
+                          child: Card(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(width: 16),
+                                  Text('Acquiring GPS position...'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+
                       final habits = context.read<HabitViewModel>().habitsWithLogs.map((e) => e.habit).toList();
-                      final triggered = await GeofenceService.instance.checkProximityAndNotify(habits);
+                      final report = await GeofenceService.instance.getProximityDiagnosticReport(habits);
+
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(triggered.isNotEmpty
-                                ? '📍 Geofence proximity matched for: ${triggered.join(", ")}!'
-                                : '📍 GPS evaluated: No geofenced habits within immediate range.'),
-                            backgroundColor: const Color(0xFF059669),
+                        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Row(
+                              children: [
+                                Icon(Icons.location_on_rounded, color: Color(0xFF0891B2)),
+                                SizedBox(width: 8),
+                                Text('GPS Proximity Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                            content: Text(report, style: const TextStyle(fontSize: 13, height: 1.45)),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('OK'),
+                              ),
+                            ],
                           ),
                         );
                       }

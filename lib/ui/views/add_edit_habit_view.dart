@@ -639,16 +639,22 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.location_on_rounded, color: Color(0xFF059669)),
-                          SizedBox(width: 8),
-                          Text(
-                            'Geofenced Habit (Google Maps)',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF0F172A)),
-                          ),
-                        ],
+                      const Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on_rounded, color: Color(0xFF059669)),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Geofenced Habit (Google Maps)',
+                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF0F172A)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Switch(
                         value: _enableGeofence,
                         activeThumbColor: const Color(0xFF059669),
@@ -823,9 +829,12 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                     children: [
                       Icon(Icons.link_rounded, color: Color(0xFF4F46E5)),
                       SizedBox(width: 8),
-                      Text(
-                        'Habit Stacking (James Clear Formula)',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF312E81)),
+                      Expanded(
+                        child: Text(
+                          'Habit Stacking (James Clear Formula)',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF312E81)),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),

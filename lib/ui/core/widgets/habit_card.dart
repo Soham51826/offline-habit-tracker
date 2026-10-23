@@ -278,12 +278,17 @@ class _HabitCardState extends State<HabitCard> with SingleTickerProviderStateMix
                                           color: Color(0xFF059669),
                                         ),
                                         const SizedBox(width: 3),
-                                        Text(
-                                          habit.locationName!,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF059669),
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 120),
+                                          child: Text(
+                                            habit.locationName!,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF059669),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],

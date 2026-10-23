@@ -229,20 +229,26 @@ class _AnalyticsViewState extends State<AnalyticsView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Icon(
-              _selectedChartTab == 0 ? Icons.bar_chart_rounded : Icons.show_chart_rounded,
-              size: 20,
-              color: const Color(0xFF10B981),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              _selectedChartTab == 0 ? '7-Day Completion Rates' : '30-Day Trend Curve',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-            ),
-          ],
+        Expanded(
+          child: Row(
+            children: [
+              Icon(
+                _selectedChartTab == 0 ? Icons.bar_chart_rounded : Icons.show_chart_rounded,
+                size: 20,
+                color: const Color(0xFF10B981),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  _selectedChartTab == 0 ? '7-Day Completion Rates' : '30-Day Trend Curve',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
@@ -563,10 +569,14 @@ class _AnalyticsViewState extends State<AnalyticsView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Daily Activity Matrix (Last 28 Days)',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              const Expanded(
+                child: Text(
+                  'Daily Activity Matrix (Last 28 Days)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 'Tap cell for details',
                 style: TextStyle(
