@@ -8,6 +8,7 @@ import 'dashboard_view.dart';
 import 'insights_view.dart';
 import 'analytics_view.dart';
 import 'settings_view.dart';
+import '../../data/models/behavioral_insight.dart';
 
 /// Main container housing floating glassmorphic navigation and cross-viewmodel coordination.
 class MainNavigationView extends StatefulWidget {
@@ -51,7 +52,7 @@ class _MainNavigationViewState extends State<MainNavigationView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final urgentCount = insightsVm.insights
-        .where((i) => i.severity.name == 'urgent')
+        .where((i) => i.severity == InsightSeverity.urgent)
         .length;
 
     return Scaffold(

@@ -6,6 +6,7 @@ import '../core/widgets/habit_card.dart';
 import '../core/widgets/progress_ring.dart';
 import '../viewmodels/habit_viewmodel.dart';
 import '../viewmodels/insights_viewmodel.dart';
+import '../../data/models/behavioral_insight.dart';
 import 'add_edit_habit_view.dart';
 
 /// Main interactive dashboard showcasing the horizontal calendar strip,
@@ -170,8 +171,8 @@ class _DashboardViewState extends State<DashboardView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Check if any urgent streak risk alert exists
-    final streakRiskInsight = insightsVm.insights.cast<dynamic>().firstWhere(
-      (i) => i.severity.name == 'urgent',
+    final streakRiskInsight = insightsVm.insights.cast<BehavioralInsight?>().firstWhere(
+      (i) => i?.severity == InsightSeverity.urgent,
       orElse: () => null,
     );
 

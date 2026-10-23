@@ -97,7 +97,6 @@ class BackgroundWorkerService {
     try {
       await Workmanager().initialize(
         callbackDispatcher,
-        isInDebugMode: kDebugMode,
       );
     } catch (e) {
       debugPrint('Workmanager initialization failed: $e');
@@ -120,9 +119,9 @@ class BackgroundWorkerService {
         habitPeriodicTaskKey,
         frequency: const Duration(hours: 3),
         initialDelay: const Duration(minutes: 15),
-        existingWorkPolicy: ExistingWorkPolicy.replace,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
         constraints: Constraints(
-          networkType: NetworkType.not_required,
+          networkType: NetworkType.notRequired,
           requiresBatteryNotLow: false,
           requiresCharging: false,
           requiresDeviceIdle: false,
@@ -136,9 +135,9 @@ class BackgroundWorkerService {
         habitStreakDefenseTaskKey,
         frequency: const Duration(hours: 6),
         initialDelay: const Duration(hours: 2),
-        existingWorkPolicy: ExistingWorkPolicy.replace,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
         constraints: Constraints(
-          networkType: NetworkType.not_required,
+          networkType: NetworkType.notRequired,
           requiresBatteryNotLow: false,
           requiresCharging: false,
           requiresDeviceIdle: false,

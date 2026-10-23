@@ -5,14 +5,18 @@ enum InsightType {
   streakRisk,
   overloadWarning,
   momentumMilestone,
-  recoveryOpportunity,
+  recoveryOpportunity;
+
+  String get name => toString().split('.').last;
 }
 
 enum InsightSeverity {
   urgent,
   warning,
   suggestion,
-  celebration,
+  celebration;
+
+  String get name => toString().split('.').last;
 }
 
 class BehavioralInsight {
