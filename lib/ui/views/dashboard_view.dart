@@ -104,7 +104,7 @@ class _DashboardViewState extends State<DashboardView> {
                     decoration: const InputDecoration(
                       labelText: 'Daily Reflection / Note (Optional)',
                       hintText: 'Add an optional reflection or note on obstacles/wins...',
-                      helperText: 'Capture context to improve behavioral analysis',
+                      helperText: 'Keep track of your thoughts and what helped you succeed',
                       prefixIcon: Icon(Icons.notes_rounded),
                     ),
                   ),
@@ -148,7 +148,7 @@ class _DashboardViewState extends State<DashboardView> {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isSelected ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.transparent,
               shape: BoxShape.circle,
@@ -157,10 +157,10 @@ class _DashboardViewState extends State<DashboardView> {
                 width: isSelected ? 2 : 1,
               ),
             ),
-            child: Text(emoji, style: const TextStyle(fontSize: 22)),
+            child: Text(emoji, style: const TextStyle(fontSize: 24)),
           ),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 10, fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal)),
+          const SizedBox(height: 6),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal)),
         ],
       ),
     );
@@ -198,13 +198,14 @@ class _DashboardViewState extends State<DashboardView> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Run Behavioral Analysis',
+            tooltip: 'Refresh Habits & Insights',
             icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF10B981)),
             onPressed: () async {
+              await habitVm.loadHabits();
               await insightsVm.runBehavioralAnalysis();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Behavioral analysis refreshed! Check Insights tab.')),
+                  const SnackBar(content: Text('Habits and insights refreshed!')),
                 );
               }
             },
@@ -481,19 +482,19 @@ class _DashboardViewState extends State<DashboardView> {
             const SizedBox(height: 14),
             const Text(
               'No habits scheduled for this day',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             const Text(
-              'Add your first habit or load 21-day realistic demo data from Settings!',
+              'Create your first daily habit or tap below to explore with sample routines!',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () => habitVm.seedDemoData(),
-              icon: const Icon(Icons.bolt_rounded),
-              label: const Text('Seed 21-Day Demo Data'),
+              icon: const Icon(Icons.add_task_rounded),
+              label: const Text('Add Starter Habits'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,

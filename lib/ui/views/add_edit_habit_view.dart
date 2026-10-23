@@ -167,11 +167,11 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Select Geofence Center',
+                              'Select Location on Map',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                             ),
                             Text(
-                              'Tap anywhere on the Google Map to drop pin',
+                              'Tap anywhere on the map to set your reminder spot',
                               style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                             ),
                           ],
@@ -195,7 +195,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                             Marker(
                               markerId: const MarkerId('geofence_center'),
                               position: selectedLatLng,
-                              infoWindow: InfoWindow(title: _locationName.isNotEmpty ? _locationName : 'Habit Geofence'),
+                              infoWindow: InfoWindow(title: _locationName.isNotEmpty ? _locationName : 'Reminder Spot'),
                             ),
                           },
                           circles: {
@@ -228,14 +228,14 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'Pin set to ${selectedLatLng.latitude.toStringAsFixed(4)}, ${selectedLatLng.longitude.toStringAsFixed(4)}',
+                                    'Location set: ${_locationName.isNotEmpty ? _locationName : "Selected Spot"}',
                                   ),
                                   backgroundColor: const Color(0xFF059669),
                                 ),
                               );
                             },
                             icon: const Icon(Icons.check_circle_rounded),
-                            label: const Text('Confirm Map Location'),
+                            label: const Text('Confirm Location'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF059669),
                               foregroundColor: Colors.white,
@@ -257,7 +257,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
     );
   }
 
-  /// Triggers a test proximity notification for live faculty/student demonstration
+  /// Triggers a test proximity notification
   Future<void> _simulateProximityTrigger() async {
     final tempHabit = Habit(
       id: widget.habitToEdit?.id ?? const Uuid().v4(),
@@ -265,7 +265,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
       category: _category,
       colorValue: _colorValue,
       iconName: _iconName,
-      locationName: _locationName.isNotEmpty ? _locationName : 'Campus Fitness Center',
+      locationName: _locationName.isNotEmpty ? _locationName : 'Fitness Center',
       latitude: _latitude ?? 19.0760,
       longitude: _longitude ?? 72.8777,
       geofenceRadius: _geofenceRadius,
@@ -277,7 +277,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('🔔 Geofence notification triggered for "${tempHabit.locationName}"!'),
+        content: Text('🔔 Location reminder sent for "${tempHabit.locationName}"!'),
         backgroundColor: const Color(0xFF059669),
       ),
     );
@@ -646,7 +646,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                             SizedBox(width: 8),
                             Flexible(
                               child: Text(
-                                'Geofenced Habit (Google Maps)',
+                                'Remind Me at a Place',
                                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF0F172A)),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -674,7 +674,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Attach a physical location (e.g. Gym, University Campus). Automatically triggers a reminder when entering within radius.',
+                    'Attach a physical location (e.g. Gym, Library, Park). You will get a friendly reminder when you arrive nearby.',
                     style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
                   ),
 
@@ -683,15 +683,15 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                     TextFormField(
                       initialValue: _locationName,
                       decoration: const InputDecoration(
-                        labelText: 'Venue / Geofence Name *',
-                        hintText: 'e.g., Campus Fitness Center, Central Library, Tech Park',
-                        helperText: 'Displayed in location arrival notifications',
+                        labelText: 'Place / Venue Name *',
+                        hintText: 'e.g., Fitness Center, Walking Park, Community Library',
+                        helperText: 'Where should we remind you to do this habit?',
                         prefixIcon: Icon(Icons.pin_drop_rounded),
                       ),
                       validator: (val) {
                         if (!_enableGeofence) return null;
                         if (val == null || val.trim().isEmpty) {
-                          return 'Please provide a location name for the geofence.';
+                          return 'Please provide a place name for the reminder.';
                         }
                         if (val.trim().length < 2) return 'Min 2 characters required.';
                         if (val.trim().length > 60) return 'Max 60 characters.';
@@ -711,7 +711,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                             icon: _isFetchingLocation
                                 ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                                 : const Icon(Icons.my_location_rounded, size: 16),
-                            label: const Text('Use Current GPS'),
+                            label: const Text('Use Current Location'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF059669),
                               side: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -802,7 +802,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                       child: TextButton.icon(
                         onPressed: _simulateProximityTrigger,
                         icon: const Icon(Icons.notifications_active_rounded, size: 16),
-                        label: const Text('Simulate Entering Geofence (Test Alert)'),
+                        label: const Text('Test Location Reminder'),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF4F46E5),
                         ),
@@ -831,7 +831,7 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Habit Stacking (James Clear Formula)',
+                          'Link to Another Habit (Habit Stacking)',
                           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF312E81)),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -840,14 +840,14 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Pair this habit directly after an established routine to leverage neurological associative memory.',
+                    'Do this habit right after an established routine to build an easy, lasting chain.',
                     style: TextStyle(fontSize: 12, color: Color(0xFF4338CA)),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String?>(
                     initialValue: _anchorHabitId,
                     decoration: const InputDecoration(
-                      labelText: 'Anchor Habit (Do this immediately after...)',
+                      labelText: 'Do this habit right after...',
                       filled: true,
                       fillColor: Colors.white,
                     ),

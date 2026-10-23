@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/background_worker.dart';
-import '../../services/gemini_ai_service.dart';
 import '../../services/geofence_service.dart';
 import '../../services/notification_service.dart';
 import '../viewmodels/habit_viewmodel.dart';
 
-
-/// Settings and diagnostic tools view for WorkManager background tasks,
-/// battery optimization guidelines, demo data seeding, and database reset.
+/// Consumer-friendly Settings view designed for maximum accessibility
+/// across all age groups (20 to 80+).
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
 
@@ -17,200 +15,234 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  bool _backgroundWorkerEnabled = true;
+  bool _remindersEnabled = true;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    const primaryColor = Color(0xFF10B981);
+    final cardBg = isDark ? const Color(0xFF141C2E) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0);
+    final textMuted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings & Diagnostics'),
+        title: const Text(
+          'Settings',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // 1. Background WorkManager & Notification Section
-          _buildSectionHeader('Background Worker & Notifications', Icons.notifications_active_rounded),
-          const SizedBox(height: 8),
+          // 1. Warm Greeting & Profile Banner
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF059669), Color(0xFF10B981)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.spa_rounded,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'HabitForge',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Small daily steps lead to lasting change.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 2. Reminders & Notifications
+          _buildSectionHeader('Reminders & Notifications', Icons.notifications_active_rounded, primaryColor),
+          const SizedBox(height: 10),
           Material(
-            color: isDark ? const Color(0xFF141C2E) : Colors.white,
+            color: cardBg,
             borderRadius: BorderRadius.circular(18),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
-                ),
+                border: Border.all(color: borderColor),
               ),
               child: Column(
                 children: [
                   SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     secondary: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
+                        color: primaryColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.alarm_on_rounded, color: Color(0xFF10B981), size: 22),
+                      child: const Icon(Icons.alarm_on_rounded, color: primaryColor, size: 24),
                     ),
                     title: const Text(
-                      'WorkManager Background Reminders',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      'Daily Habit Reminders',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                     ),
-                    subtitle: const Text(
-                      'Periodically inspects local SQLite database to protect active streaks and nudge pending habits.',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      'Receive friendly nudges throughout the day so you never miss a routine.',
+                      style: TextStyle(fontSize: 13, color: textMuted),
                     ),
-                    value: _backgroundWorkerEnabled,
+                    value: _remindersEnabled,
                     onChanged: (val) async {
-                      setState(() => _backgroundWorkerEnabled = val);
+                      setState(() => _remindersEnabled = val);
                       if (val) {
                         await BackgroundWorkerService.instance.schedulePeriodicHabitCheck();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('WorkManager periodic habit task scheduled.')),
+                            const SnackBar(content: Text('Daily habit reminders turned on.')),
                           );
                         }
                       } else {
                         await BackgroundWorkerService.instance.cancelAllTasks();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('WorkManager background tasks cancelled.')),
+                            const SnackBar(content: Text('Daily habit reminders turned off.')),
                           );
                         }
                       }
                     },
                   ),
-                  Divider(
-                    height: 1,
-                    color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
-                  ),
+                  Divider(height: 1, color: borderColor),
                   ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.send_rounded, color: Color(0xFF6366F1), size: 22),
                     ),
-                    title: const Text('Test Local Notification', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                    subtitle: const Text('Dispatch an immediate sample behavioral nudge', style: TextStyle(fontSize: 12)),
+                    title: const Text(
+                      'Test Reminder Notification',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    subtitle: Text(
+                      'Send a sample reminder to preview how it looks on your phone.',
+                      style: TextStyle(fontSize: 13, color: textMuted),
+                    ),
                     trailing: ElevatedButton(
                       onPressed: () async {
                         await NotificationService.instance.requestPermissions();
                         await NotificationService.instance.showNotification(
                           id: 999,
-                          title: '🔥 Streak Defense Alert: Morning Meditation',
-                          body: 'You have an active 18-day streak! Check in now to preserve your neurological momentum.',
+                          title: '🌿 Habit Reminder',
+                          body: 'Time for your daily routine! Take a quick minute to check in and celebrate your progress.',
                         );
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Sample notification dispatched!')),
+                            const SnackBar(content: Text('Sample notification sent! Check your notifications.')),
                           );
                         }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6366F1),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
-                      child: const Text('Send Test', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                      child: const Text('Send Test', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          // 1.5. Online Services & API Security Diagnostics
-          _buildSectionHeader('Online APIs & Security (.env)', Icons.cloud_done_rounded),
-          const SizedBox(height: 8),
+          const SizedBox(height: 24),
+
+          // 3. Location Reminders
+          _buildSectionHeader('Places & Location Reminders', Icons.place_rounded, const Color(0xFF0891B2)),
+          const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF141C2E) : Colors.white,
+              color: cardBg,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
-              ),
+              border: Border.all(color: borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.auto_awesome_rounded, color: Color(0xFF4F46E5), size: 20),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Google Gemini AI (Smart Insights)',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                      ),
-                    ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: GeminiAiService.instance.hasApiKey
-                            ? const Color(0xFFD1FAE5)
-                            : const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFF0891B2).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(
-                        GeminiAiService.instance.hasApiKey ? 'Live API Key' : 'Local Fallback',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: GeminiAiService.instance.hasApiKey
-                              ? const Color(0xFF059669)
-                              : const Color(0xFFD97706),
-                        ),
+                      child: const Icon(Icons.location_on_rounded, color: Color(0xFF0891B2), size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Arrive & Check In',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Reminds you when you reach places like the gym, park, or library.',
+                            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Weekly SQLite logs are processed by Gemini 1.5 Flash. Model keys are isolated in .env and omitted from source control.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.35),
-                ),
-                const Divider(height: 24),
-                Row(
-                  children: [
-                    const Icon(Icons.map_rounded, color: Color(0xFF0891B2), size: 20),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Google Maps SDK & Geofencing',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD1FAE5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'Active SDK',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF059669),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Supports live pin-dropping on Google Maps and geodesic proximity calculations for automated check-ins upon campus or gym arrival.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.35),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
+                  height: 44,
                   child: OutlinedButton.icon(
                     onPressed: () async {
                       showDialog(
@@ -225,7 +257,7 @@ class _SettingsViewState extends State<SettingsView> {
                                 children: [
                                   CircularProgressIndicator(),
                                   SizedBox(width: 16),
-                                  Text('Acquiring GPS position...'),
+                                  Text('Checking your location...'),
                                 ],
                               ),
                             ),
@@ -241,105 +273,89 @@ class _SettingsViewState extends State<SettingsView> {
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             title: const Row(
                               children: [
                                 Icon(Icons.location_on_rounded, color: Color(0xFF0891B2)),
                                 SizedBox(width: 8),
-                                Text('GPS Proximity Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                                Text('Location Status', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
                               ],
                             ),
-                            content: Text(report, style: const TextStyle(fontSize: 13, height: 1.45)),
+                            content: Text(
+                              report,
+                              style: const TextStyle(fontSize: 14, height: 1.45),
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx),
-                                child: const Text('OK'),
+                                child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w700)),
                               ),
                             ],
                           ),
                         );
                       }
                     },
-                    icon: const Icon(Icons.my_location_rounded, size: 16),
-                    label: const Text('Evaluate GPS Proximity Now'),
+                    icon: const Icon(Icons.my_location_rounded, size: 18),
+                    label: const Text('Check Location Status', style: TextStyle(fontWeight: FontWeight.w600)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF0891B2),
                       side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // 2. Android Battery Optimization Info Card
-          _buildSectionHeader('OS Battery Optimization Resilience', Icons.battery_charging_full_rounded),
-          const SizedBox(height: 8),
+          // 4. Privacy & Data Management
+          _buildSectionHeader('Privacy & Data', Icons.security_rounded, const Color(0xFF6366F1)),
+          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF141C2E) : Colors.white,
+              color: cardBg,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
-              ),
+              border: Border.all(color: borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.shield_outlined, color: Color(0xFF06B6D4), size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Doze Mode & Battery Policies',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.lock_outline_rounded, color: Color(0xFF10B981), size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '100% Private On-Device',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'All habits and notes stay safely on your phone.',
+                            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'On Android devices, manufacturers enforce strict background Doze limits. WorkManager uses persistent JobScheduler/AlarmManager bindings to execute tasks even during Doze windows. For 100% timely triggers, set battery usage for this app to "Unrestricted" in device settings.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.4,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 3. Demo Data & Seeder
-          _buildSectionHeader('Demo Data & Simulation', Icons.dataset_rounded),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF141C2E) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Instant 21-Day Realistic Dataset',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Loads 3 weeks of historical habit logs containing an Anchor habit (95% consistency), a Struggling habit (35%), a Weekend Slump habit, and a Circadian Friction habit. Instantly activates all behavioral heuristics, charts, and heatmap!',
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.4,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                  ),
-                ),
                 const SizedBox(height: 16),
+                Divider(height: 1, color: borderColor),
+                const SizedBox(height: 16),
+
+                // Explore Starter Habits Button
                 SizedBox(
                   width: double.infinity,
                   height: 46,
@@ -352,19 +368,39 @@ class _SettingsViewState extends State<SettingsView> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             backgroundColor: Color(0xFF10B981),
-                            content: Text('21 days of demo data seeded! Check Insights and Analytics.'),
+                            content: Text('Starter habits added! Check the Today tab.'),
                           ),
                         );
                       }
                     },
-                    icon: const Icon(Icons.bolt_rounded),
+                    icon: const Icon(Icons.add_task_rounded, size: 20),
                     label: const Text(
-                      'Seed 21-Day Realistic Data',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                      'Add Starter Habits',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Reset App Data Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmClearData(context),
+                    icon: const Icon(Icons.refresh_rounded, size: 20, color: Colors.red),
+                    label: const Text(
+                      'Reset All Habits',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.red),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFCA5A5)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
@@ -372,91 +408,55 @@ class _SettingsViewState extends State<SettingsView> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // 4. Database Management & Reset
-          _buildSectionHeader('Database Management', Icons.storage_rounded),
-          const SizedBox(height: 8),
-          Material(
-            color: isDark ? const Color(0xFF141C2E) : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 22),
-                ),
-                title: const Text(
-                  'Clear All SQLite Data',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red),
-                ),
-                subtitle: const Text(
-                  'Delete all habits, logs, and behavioral insights from local storage.',
-                  style: TextStyle(fontSize: 12),
-                ),
-                trailing: ElevatedButton(
-                  onPressed: () => _confirmClearData(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.withValues(alpha: 0.15),
-                    foregroundColor: Colors.red,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Reset', style: TextStyle(fontWeight: FontWeight.w700)),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 5. Behavioral Frameworks Reference
-          _buildSectionHeader('Behavioral Psychology Frameworks', Icons.psychology_alt_rounded),
-          const SizedBox(height: 8),
+          // 5. Helpful Habit Tips (Simple & universal for ages 20 to 80)
+          _buildSectionHeader('Tips for Building Habits', Icons.lightbulb_rounded, const Color(0xFFF59E0B)),
+          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF141C2E) : Colors.white,
+              color: cardBg,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isDark ? const Color(0xFF26334D) : const Color(0xFFE2E8F0),
-              ),
+              border: Border.all(color: borderColor),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _TipItem(
+                  icon: Icons.flag_rounded,
+                  title: 'Start Small',
+                  desc: 'Just 5 to 10 minutes a day is enough to build confidence and momentum.',
+                ),
+                SizedBox(height: 12),
+                _TipItem(
+                  icon: Icons.link_rounded,
+                  title: 'Link Your Habits',
+                  desc: 'Attach a new habit right after something you already do every day, like morning tea.',
+                ),
+                SizedBox(height: 12),
+                _TipItem(
+                  icon: Icons.replay_rounded,
+                  title: 'Never Miss Twice',
+                  desc: 'If life gets busy and you miss a day, simply resume the very next day.',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 6. About App Card
+          Center(
+            child: Column(
+              children: [
                 Text(
-                  'On-Device Behavioral Rules & Heuristics:',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  'HabitForge • Version 1.0.0',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textMuted),
                 ),
-                SizedBox(height: 8),
-                _PrincipleBullet(
-                  title: 'James Clear: Habit Stacking & "Never Miss Twice"',
-                  desc: 'Pairs weak/new habits after 80%+ anchor habits to leverage procedural memory.',
-                ),
-                SizedBox(height: 6),
-                _PrincipleBullet(
-                  title: 'BJ Fogg Tiny Habits: Ability Scaling',
-                  desc: 'Detects weekend drop-offs and scales requirements to preserve consistency.',
-                ),
-                SizedBox(height: 6),
-                _PrincipleBullet(
-                  title: 'Roy Baumeister: Ego Depletion & Circadian Alignment',
-                  desc: 'Correlates hourly logs to identify peak focus hours vs evening fatigue.',
-                ),
-                SizedBox(height: 6),
-                _PrincipleBullet(
-                  title: 'Daniel Kahneman: Loss Aversion & Momentum Defense',
-                  desc: 'High-urgency interventions to protect streaks before the 24-hour cutoff.',
+                const SizedBox(height: 4),
+                Text(
+                  'Designed for simple, healthy daily routines.',
+                  style: TextStyle(fontSize: 12, color: textMuted),
                 ),
               ],
             ),
@@ -467,14 +467,14 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF10B981)),
+        Icon(icon, size: 20, color: color),
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -484,14 +484,16 @@ class _SettingsViewState extends State<SettingsView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset All Local Data?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Reset All Habits?'),
         content: const Text(
-          'This will wipe all SQLite tables. All tracked habits and past history will be permanently deleted.',
+          'This will permanently delete all your habits, past logs, and notes. Are you sure you want to start fresh?',
+          style: TextStyle(fontSize: 14, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -501,12 +503,16 @@ class _SettingsViewState extends State<SettingsView> {
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Database reset successfully.')),
+                  const SnackBar(content: Text('All habits have been cleared.')),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Confirm Wipe'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Reset', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -514,27 +520,38 @@ class _SettingsViewState extends State<SettingsView> {
   }
 }
 
-class _PrincipleBullet extends StatelessWidget {
+class _TipItem extends StatelessWidget {
+  final IconData icon;
   final String title;
   final String desc;
 
-  const _PrincipleBullet({required this.title, required this.desc});
+  const _TipItem({
+    required this.icon,
+    required this.title,
+    required this.desc,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('• ', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+        Icon(icon, size: 20, color: const Color(0xFF10B981)),
+        const SizedBox(width: 10),
         Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: DefaultTextStyle.of(context).style.copyWith(fontSize: 12),
-              children: [
-                TextSpan(text: '$title: ', style: const TextStyle(fontWeight: FontWeight.w700)),
-                TextSpan(text: desc, style: const TextStyle(color: Colors.grey)),
-              ],
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                desc,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.35),
+              ),
+            ],
           ),
         ),
       ],

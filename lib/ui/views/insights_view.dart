@@ -91,7 +91,7 @@ class InsightsView extends StatelessWidget {
                     children: [
                       CircularProgressIndicator(),
                       SizedBox(height: 16),
-                      Text('Evaluating behavioral heuristics & neural patterns...'),
+                      Text('Analyzing your habit routines & streaks...'),
                     ],
                   ),
                 ),
@@ -203,7 +203,7 @@ class InsightsView extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Synthesized offline using procedural memory metrics, 30-day consistency curves, and circadian execution data.',
+            'Calculated from your daily check-ins, consistency over the past 30 days, and current streaks.',
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
@@ -356,9 +356,9 @@ class InsightsView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ACTIONABLE EXPERIMENT',
+                        'RECOMMENDED ACTION',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
                           color: color,
@@ -394,22 +394,22 @@ class InsightsView extends StatelessWidget {
                 size: 54, color: Color(0xFF10B981)),
             const SizedBox(height: 14),
             const Text(
-              'No Active Behavioral Alerts',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              'All Habits on Track',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             const Text(
-              'Your habits are in healthy alignment! Continue logging daily to unlock habit stacking, weekend slump detection, and circadian timing recommendations.',
+              'Your habits are in great shape! Keep checking in daily to unlock smart tips, timing suggestions, and streak insights.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () {
                 context.read<HabitViewModel>().seedDemoData();
               },
-              icon: const Icon(Icons.bolt_rounded),
-              label: const Text('Load 21-Day Demo Data to Preview Engine'),
+              icon: const Icon(Icons.add_task_rounded),
+              label: const Text('Add Starter Habits to Explore'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
@@ -470,7 +470,7 @@ class InsightsView extends StatelessWidget {
                       SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'Gemini AI Smart Coach',
+                          'AI Habit Coach',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -491,7 +491,7 @@ class InsightsView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
-                    'gemini-flash',
+                    'Personal Coach',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 11,
@@ -509,7 +509,7 @@ class InsightsView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Personalized Behavioral Nudges from SQLite Logs',
+                  'Personalized guidance based on your weekly progress',
                   style: TextStyle(
                     fontSize: 13,
                     color: Color(0xFF475569),
@@ -532,7 +532,7 @@ class InsightsView extends StatelessWidget {
                         CircularProgressIndicator(color: primaryIndigo),
                         SizedBox(height: 14),
                         Text(
-                          'Evaluating weekly SQLite habit logs with Gemini AI...',
+                          'Generating your personalized habit advice...',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -581,7 +581,7 @@ class InsightsView extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           const Text(
-                            'Audit Active',
+                            'Active Advice',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -593,7 +593,7 @@ class InsightsView extends StatelessWidget {
                       OutlinedButton.icon(
                         onPressed: () => vm.fetchGeminiCoaching(),
                         icon: const Icon(Icons.refresh_rounded, size: 16),
-                        label: const Text('Regenerate Coach Nudge'),
+                        label: const Text('Refresh Advice'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: primaryIndigo,
                           side: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -619,7 +619,7 @@ class InsightsView extends StatelessWidget {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Tap below to send your recent habit logs to Gemini API and receive personalized psychological coaching.',
+                            'Get personalized encouragement, tips, and insights tailored to your daily routines.',
                             style: TextStyle(
                               fontSize: 13,
                               color: Color(0xFF312E81),
@@ -637,7 +637,7 @@ class InsightsView extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => vm.fetchGeminiCoaching(),
                       icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                      label: const Text('Consult Gemini AI Coach'),
+                      label: const Text('Ask AI Coach'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryIndigo,
                         foregroundColor: Colors.white,
@@ -657,7 +657,7 @@ class InsightsView extends StatelessWidget {
                     SizedBox(width: 5),
                     Expanded(
                       child: Text(
-                        'API Key secured via flutter_dotenv • Local SQLite data source',
+                        '🔒 100% Private • Kept safely on your phone',
                         style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                         overflow: TextOverflow.ellipsis,
                       ),

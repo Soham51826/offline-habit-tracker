@@ -135,8 +135,8 @@ class GeofenceService {
 
     final geofencedHabits = habits.where((h) => h.hasLocation).toList();
     if (geofencedHabits.isEmpty) {
-      return '📍 GPS Active (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}).\n'
-          'No habits have a location set yet. Open any habit, turn on "Geofenced Habit", and tap "Use Current GPS" to anchor it to your location!';
+      return '📍 Location Active\n\n'
+          'No habits have a place set yet. Edit any habit, turn on "Remind Me at a Place", and select your location!';
     }
 
     final triggered = <String>[];
@@ -175,29 +175,28 @@ class GeofenceService {
     }
 
     if (triggered.isNotEmpty) {
-      return '🎯 Geofence Triggered!\nYou arrived within range of: ${triggered.join(", ")}. Notification dispatched!';
+      return '🎯 Arrived at Location!\n\nYou are within range of: ${triggered.join(", ")}. A habit reminder was sent to your notifications.';
     }
 
     final formattedDist = minDistance < 1000
         ? '${minDistance.toInt()} meters'
         : '${(minDistance / 1000).toStringAsFixed(2)} km';
 
-    return '📍 GPS: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}\n'
-        'Nearest: "$closestHabitTitle" (${closestVenue ?? "venue"}) is $formattedDist away (Needs < ${closestRadius.toInt()}m).\n'
-        'Tip: Open that habit and tap "Use Current GPS" to match your current room/desk, or tap "Simulate" to test alert!';
+    return '📍 Location Status: Active\n\n'
+        'Nearest place reminder: "$closestHabitTitle" (${closestVenue ?? "venue"}) is $formattedDist away (triggers within ${closestRadius.toInt()}m).\n\n'
+        'When you arrive near this spot, HabitForge will remind you automatically!';
   }
 
-  /// Simulates entering a habit's geofence boundary.
-  /// Crucial for academic demonstration, grading rubrics, and emulator testing.
+  /// Triggers an arrival notification for testing
   Future<void> simulateArrival({
     required Habit habit,
     String? customLocationName,
   }) async {
-    final locName = habit.locationName ?? customLocationName ?? 'Campus / Gym';
+    final locName = habit.locationName ?? customLocationName ?? 'Fitness Center';
     await NotificationService.instance.showNotification(
       id: habit.id.hashCode,
-      title: '📍 Arrived at $locName [Simulated]',
-      body: 'Geofence triggered! You are at $locName. Keep your streak alive by checking in on "${habit.title}".',
+      title: '📍 Arrived at $locName',
+      body: 'You are at $locName! Keep your momentum going by completing "${habit.title}".',
       payload: 'geofence_sim_${habit.id}',
     );
   }
