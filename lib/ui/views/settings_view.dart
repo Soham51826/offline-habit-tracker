@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import '../../services/background_worker.dart';
 import '../../services/geofence_service.dart';
 import '../../services/notification_service.dart';
+import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/habit_viewmodel.dart';
+import 'auth/login_view.dart';
+import 'auth/signup_view.dart';
 
 /// Consumer-friendly Settings view designed for maximum accessibility
 /// across all age groups (20 to 80+).
@@ -19,6 +22,7 @@ class _SettingsViewState extends State<SettingsView> {
 
   @override
   Widget build(BuildContext context) {
+    final authVm = context.watch<AuthViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const primaryColor = Color(0xFF10B981);
     final cardBg = isDark ? const Color(0xFF141C2E) : Colors.white;
@@ -62,29 +66,38 @@ class _SettingsViewState extends State<SettingsView> {
                     color: Colors.white.withValues(alpha: 0.25),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.spa_rounded,
-                    color: Colors.white,
-                    size: 30,
+                  child: Center(
+                    child: Text(
+                      authVm.userName.isNotEmpty && authVm.userName != 'Guest'
+                          ? authVm.userName[0].toUpperCase()
+                          : '🌿',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'HabitForge',
-                        style: TextStyle(
+                        authVm.userName.isNotEmpty ? authVm.userName : 'HabitForge',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Small daily steps lead to lasting change.',
-                        style: TextStyle(
+                        authVm.userEmail.isNotEmpty
+                            ? authVm.userEmail
+                            : 'Small daily steps lead to lasting change.',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -93,6 +106,28 @@ class _SettingsViewState extends State<SettingsView> {
                     ],
                   ),
                 ),
+                if (authVm.isLoggedIn && !authVm.isGuest)
+                  IconButton(
+                    icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                    tooltip: 'Log Out',
+                    onPressed: () => _confirmLogout(context),
+                  )
+                else if (authVm.isGuest)
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SignUpView()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF059669),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('Sign Up', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                  ),
               ],
             ),
           ),
@@ -445,6 +480,113 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 24),
 
+          // 5.5. Account Management & Authentication Session
+          _buildSectionHeader('Account & Session', Icons.account_circle_rounded, const Color(0xFF0284C7)),
+          const SizedBox(height: 10),
+          Material(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: borderColor),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.person_rounded, color: Color(0xFF0284C7), size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              authVm.isLoggedIn
+                                  ? (authVm.isGuest ? 'Guest Session' : authVm.userName)
+                                  : 'Not Logged In',
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              authVm.isLoggedIn
+                                  ? (authVm.isGuest
+                                      ? 'Tap below to link an account or keep offline'
+                                      : authVm.userEmail)
+                                  : 'Sign in to sync your profile',
+                              style: TextStyle(fontSize: 13, color: textMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  if (authVm.isLoggedIn && !authVm.isGuest)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _confirmLogout(context),
+                        icon: const Icon(Icons.logout_rounded, size: 18),
+                        label: const Text('Log Out of HabitForge'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFDC2626),
+                          side: const BorderSide(color: Color(0xFFFCA5A5)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const LoginView()),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0284C7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Log In'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const SignUpView()),
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Sign Up'),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
           // 6. About App Card
           Center(
             child: Column(
@@ -477,6 +619,38 @@ class _SettingsViewState extends State<SettingsView> {
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ],
+    );
+  }
+
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Log Out?'),
+        content: const Text(
+          'Are you sure you want to log out of your HabitForge account? Your local habits and streaks will remain safe on your device.',
+          style: TextStyle(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await context.read<AuthViewModel>().logout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
     );
   }
 

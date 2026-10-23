@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/app_constants.dart';
 import '../core/widgets/habit_card.dart';
 import '../core/widgets/progress_ring.dart';
+import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/habit_viewmodel.dart';
 import '../viewmodels/insights_viewmodel.dart';
 import '../../data/models/behavioral_insight.dart';
@@ -168,6 +169,7 @@ class _DashboardViewState extends State<DashboardView> {
 
   @override
   Widget build(BuildContext context) {
+    final authVm = context.watch<AuthViewModel>();
     final habitVm = context.watch<HabitViewModel>();
     final insightsVm = context.watch<InsightsViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -183,9 +185,11 @@ class _DashboardViewState extends State<DashboardView> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'HabitForge',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            Text(
+              authVm.userName.isNotEmpty && authVm.userName != 'Guest'
+                  ? 'Hello, ${authVm.userName} 👋'
+                  : 'HabitForge',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             Text(
               _monthFormat.format(habitVm.selectedDate),

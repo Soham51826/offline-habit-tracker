@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'services/notification_service.dart';
 import 'services/background_worker.dart';
 import 'ui/core/app_theme.dart';
+import 'ui/viewmodels/auth_viewmodel.dart';
 import 'ui/viewmodels/habit_viewmodel.dart';
 import 'ui/viewmodels/insights_viewmodel.dart';
 import 'ui/viewmodels/stats_viewmodel.dart';
+import 'ui/views/auth/title_view.dart';
 import 'ui/views/main_navigation_view.dart';
 
 void main() async {
@@ -38,12 +40,16 @@ void main() async {
 }
 
 class HabitForgeApp extends StatelessWidget {
-  const HabitForgeApp({super.key});
+  final Widget? home;
+  const HabitForgeApp({super.key, this.home});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<AuthViewModel>(
+          create: (_) => AuthViewModel(),
+        ),
         ChangeNotifierProvider<HabitViewModel>(
           create: (_) => HabitViewModel(),
         ),
@@ -60,8 +66,31 @@ class HabitForgeApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.lightTheme,
         themeMode: ThemeMode.light,
-        home: const MainNavigationView(),
+        home: home ?? const _AppRootView(),
       ),
     );
+  }
+}
+
+class _AppRootView extends StatelessWidget {
+  const _AppRootView();
+
+  @override
+  Widget build(BuildContext context) {
+    final authVm = context.watch<AuthViewModel>();
+
+    if (authVm.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF10B981)),
+        ),
+      );
+    }
+
+    if (authVm.isLoggedIn) {
+      return const MainNavigationView();
+    }
+
+    return const TitleView();
   }
 }
