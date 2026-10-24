@@ -126,6 +126,7 @@ Under faculty guidance, **HabitForge** adopted a **Hybrid Multi-Tier Architectur
 | **Security Secrets** | `flutter_dotenv` | `^6.0.1` | Environment variable isolation preventing hardcoded API keys |
 | **Notifications** | `flutter_local_notifications` | `^18.0.1` | Instant heads-up display notifications for geofence and streak alerts |
 | **Background Tasks** | `workmanager` | `^0.10.10`| Persistent Android `JobScheduler` and `AlarmManager` integration |
+| **Session Cache** | `shared_preferences` | `^2.5.5` | Fast key-value persistence for on-device authentication & profile state |
 | **Visual Charts** | `fl_chart` | `^0.70.2` | Animated vector charts for habit health and weekly completion trends |
 | **Utilities** | `intl`, `uuid` | Latest | ISO date-time formatting and RFC-4122 UUID v4 generation |
 
@@ -137,16 +138,23 @@ Under faculty guidance, **HabitForge** adopted a **Hybrid Multi-Tier Architectur
 
 ### 4.1 High-Level Hybrid System Architecture
 HabitForge implements an **Event-Driven, Layered MVVM (Model-View-ViewModel)** architectural pattern. The core architectural philosophy is **Offline-First with Selective Online Acceleration**:
-1.  **Presentation Tier (UI Views):** Refactored to Material Design 3 Light Theme specifications. Views (`DashboardView`, `InsightsView`, `AddEditHabitView`, `SettingsView`) observe immutable ViewModel state streams via `Provider`. All input forms implement strict boundary and format validators.
+1.  **Presentation Tier (UI Views):** Refactored to Material Design 3 Light Theme specifications with universal accessibility across ages 20 to 80+:
+    *   `TitleView`: Branded welcome landing page highlighting key value propositions with seamless routing to Sign Up, Login, or Guest access.
+    *   `SignUpView` & `LoginView`: Local registration and login interfaces featuring password visibility toggles, input validation, and a one-tap `"Quick Demo Login (Soham)"` button for evaluator demonstrations.
+    *   `DashboardView`: Core home checklist displaying a personalized greeting (`"Hello, Soham 👋"`), horizontal date picker, circular daily progress ring, and streak indicators.
+    *   `InsightsView`, `AnalyticsView`, `AddEditHabitView`, `SettingsView`: Feature views observing immutable ViewModel state streams via `Provider`. All input forms implement strict boundary and format validators.
 2.  **Application / Domain Tier (ViewModels & Services):**
+    *   `AuthViewModel`: Manages local authentication state, session persistence via `SharedPreferences`, guest session bypass, and secure profile logouts.
     *   `HabitViewModel`: Coordinates CRUD operations, habit filtering, and daily execution logs.
     *   `InsightsViewModel`: Evaluates local heuristics, orchestrates Gemini AI coaching requests, and aggregates momentum indexes.
+    *   `StatsViewModel`: Computes statistical metrics, category distributions, and completion trends for `fl_chart` visual representations.
     *   `GeminiAiService`: Encapsulates Google Generative AI API calls, formats SQLite habit histories into structured prompts, and handles network degradation with local fallback heuristics.
     *   `GeofenceService`: Interfaces with device GPS hardware, calculates geodesic proximity to habit venues, and dispatches location arrival notifications.
     *   `BackgroundWorkerService`: Executes scheduled WorkManager background tasks even when the app process is suspended or battery Doze mode is active.
 3.  **Data Tier (Repositories & Local Storage):**
     *   `HabitRepository` & `InsightsRepository`: Mediate between business logic and database queries.
     *   `DatabaseHelper`: Direct SQLite access managing schema migrations (Version 2 with spatial columns), transactions, and B-tree indexing.
+    *   `SharedPreferences`: Fast on-device key-value store for user session tokens, display names, and guest flags.
     *   `.env` Environment Layer: Isolates `GEMINI_API_KEY` and `GOOGLE_MAPS_API_KEY` from source control.
 
 ---
@@ -280,7 +288,11 @@ To satisfy professional software engineering standards:
 # CHAPTER 7: RESULTS & DISCUSSION
 
 ### 7.1 Testing Strategy
-The updated application underwent rigorous multi-stage validation including static code analysis (`flutter analyze`), automated unit and widget testing (`flutter test`), and functional verification on physical Pixel hardware (`62121JEA301087`). Testing specifically targeted newly added forms, Material Design 3 light theme contrast ratios, Google Maps geofence triggers, and Gemini API error-handling routines.
+The updated application underwent rigorous multi-stage validation including static code analysis (`flutter analyze`), automated unit and widget testing (`flutter test`), and functional verification on physical Pixel hardware (`62121JEA301087`). Automated tests cover 12 comprehensive test cases spanning:
+*   Behavioral Insights Engine heuristics (Streak-at-Risk, Habit Stacking, Weekend Slump, Circadian Timing, Momentum Milestones).
+*   Data Layer Serialization (Habit, HabitLog, and Geofenced Habit SQLite roundtrips).
+*   Widget Rendering & Navigation (TitleView onboarding, LoginView with demo credentials, SignUpView with field validation, and HabitForgeApp bottom navigation tabs).
+All 12 automated test cases pass with 100% success rate, and static analysis reports zero issues.
 
 ---
 

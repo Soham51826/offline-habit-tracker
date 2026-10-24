@@ -87,12 +87,12 @@ Verbatim Spoken Script:
 
 To achieve strict separation of concerns, we implemented a clean, layered Model-View-ViewModel (MVVM) architecture using Flutter and the Provider state management pattern. Our codebase in the `lib/` directory is divided into four distinct layers:
 
-1. The Presentation Layer houses our views and ViewModels—specifically `HabitViewModel`, `InsightsViewModel`, and `StatsViewModel`. ViewModels extend `ChangeNotifier` and expose immutable state streams to reactive widgets.
+1. The Presentation Layer houses our views and ViewModels—specifically `AuthViewModel` for persistent local authentication and onboarding, and `HabitViewModel`, `InsightsViewModel`, and `StatsViewModel`. ViewModels extend `ChangeNotifier` and expose immutable state streams to reactive widgets.
 2. The Domain Layer contains our pure business logic and behavioral heuristics, keeping calculation algorithms strictly decoupled from Flutter UI widgets.
-3. The Data Layer implements the Repository Pattern on top of SQLite, isolating raw SQL queries behind clean domain interfaces.
+3. The Data Layer implements the Repository Pattern on top of SQLite and persistent local preferences, isolating raw SQL queries and session storage behind clean domain interfaces.
 4. The Background Services Layer bridges native Android APIs.
 
-We chose Flutter 3.44 and Dart because they compile directly to native ARM machine code on Android, delivering smooth 60 and 120 FPS rendering. For visualization, we integrated `fl_chart`, and for background scheduling, we utilized the Android WorkManager API. Let us look closer at how our data layer guarantees relational integrity."
+We chose Flutter 3.44 and Dart because they compile directly to native ARM machine code on Android, delivering smooth 60 and 120 FPS rendering. For visualization, we integrated `fl_chart`, for local session storage we used `shared_preferences`, and for background scheduling, we utilized the Android WorkManager API. Let us look closer at how our data layer guarantees relational integrity."
 
 
 [SLIDE 5: SQLITE DATABASE SCHEMA & DATA INTEGRITY]
@@ -166,15 +166,18 @@ Fourth is the 'Never Miss Twice' Rule. If a habit was missed yesterday, the engi
 Target Duration: ~1 minute 05 seconds
 
 Key Emphasis Points:
-• Present the 3 core views: Dashboard, Behavioral Feed, and Analytics/Heatmap.
-• Mention Material 3 aesthetic, progress ring, and fl_chart integration.
+• Present the onboarding flow: Title Page, Login (with 1-Tap Demo Login), Sign Up, and Guest Access.
+• Present core views: Personalized Home Dashboard, Gemini AI / Behavioral Feed, and Analytics/Heatmap.
+• Mention universal accessibility (ages 20 to 80+), progress ring, and fl_chart integration.
 
 Verbatim Spoken Script:
-"A behavioral engine is only as effective as the interface that communicates it. We crafted a modern Material 3 dark-themed UI with emerald and indigo accents:
+"A behavioral engine is only as effective as the interface that communicates it. We crafted an accessible, consumer-grade mobile UI tailored for all age groups, from age 20 to 80:
 
-Our Dashboard features a horizontal calendar date strip, a real-time daily progress ring showing completion percentages, and dynamic flame streak badges. Habits feature tactile one-tap toggles, and for numeric habits—like drinking 8 glasses of water—users have dedicated increment and decrement controls. Tapping any habit opens a reflection dialog where users rate their perceived effort from 1 to 5 emojis.
+First, our onboarding flow welcomes users with an emerald-themed Title landing page, offering local private account creation, clear password visibility toggles, and a zero-friction 'Continue as Guest' bypass. For fast evaluation and testing, we also built a dedicated 'Quick Demo Login' button that immediately authenticates into Soham's active profile.
 
-The Insights Feed displays our proprietary 'Habit Health Index'—an aggregate procedural memory score from 0 to 100. Each insight card is color-coded by severity, cites the exact psychological principle, and provides a 2-minute actionable experiment.
+Upon entering, the Home Dashboard greets the user by name—'Hello, Soham'—accompanied by a horizontal date strip, a real-time daily progress ring showing completion percentages, and dynamic flame streak badges. Habits feature tactile one-tap toggles, and for numeric goals—like drinking 8 glasses of water—users have dedicated increment and decrement controls.
+
+The Insights Feed displays our proprietary 'Habit Health Index'—an aggregate procedural memory score from 0 to 100—caching both deterministic rule-based nudges and Gemini AI behavioral coaching.
 
 Finally, the Analytics Tab leverages `fl_chart` to render an interactive 7-day completion bar chart, a category allocation donut chart, and a 28-day GitHub-style consistency heatmap matrix. This visual density grid allows users to spot weekly patterns at a glance."
 
@@ -183,14 +186,14 @@ Finally, the Analytics Tab leverages `fl_chart` to render an interactive 7-day c
 Target Duration: ~1 minute 00 seconds
 
 Key Emphasis Points:
-• Announce testing metrics: 7/7 unit tests passed, 0 lint warnings.
+• Announce testing metrics: 12/12 automated unit and widget tests passed, 0 lint warnings.
 • Discuss challenges overcome: isolate communication and custom frequencies.
 • Conclude professionally and invite faculty questions.
 
 Verbatim Spoken Script:
 "To conclude our presentation, we subjected our application to comprehensive automated verification:
 
-Our unit and widget test suite achieved a 100% pass rate across all 7 test cases, validating our streak algorithms, habit stacking heuristic, weekend slump calculations, circadian time groupings, and SQLite JSON serialization. Furthermore, `dart analyze` reports zero warnings and zero lints across the entire codebase.
+Our unit and widget test suite achieved a 100% pass rate across all 12 test cases, validating our streak algorithms, habit stacking heuristic, weekend slump calculations, circadian time groupings, SQLite JSON serialization, and widget rendering across our TitleView, LoginView, SignUpView, and Main Navigation tabs. Furthermore, `flutter analyze` reports zero warnings and zero lints across the entire codebase.
 
 During development, our primary challenges involved SQLite singleton initialization inside separate WorkManager isolates, and designing a non-punitive streak algorithm that respects custom weekday frequencies.
 
