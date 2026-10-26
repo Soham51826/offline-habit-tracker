@@ -1,3 +1,13 @@
+/// Habit type: 'positive' = build a habit, 'negative' = break a habit (sobriety counter).
+enum HabitType {
+  positive,
+  negative;
+
+  String get dbValue => name;
+  static HabitType fromDb(String? v) =>
+      v == 'negative' ? HabitType.negative : HabitType.positive;
+}
+
 class Habit {
   final String id;
   final String title;
@@ -5,8 +15,9 @@ class Habit {
   final String category;
   final int colorValue;
   final String iconName;
-  final String frequencyType; // 'daily', 'weekdays', 'weekends', 'custom'
+  final String frequencyType; // 'daily', 'weekdays', 'weekends', 'custom', 'x_per_week'
   final String customDays; // comma separated ints: "1,2,3,4,5"
+  final int frequencyTargetDays; // For 'x_per_week': how many days per week (1-7)
   final int targetCount;
   final String unit;
   final String? reminderTime; // "08:30"
@@ -16,6 +27,9 @@ class Habit {
   final double? longitude;
   final String? locationName;
   final double geofenceRadius; // in meters
+  final HabitType habitType; // positive = build, negative = break
+  final int sortOrder; // for drag-and-drop reordering
+  final int streakFreezesRemaining; // Streak freeze/grace days
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -28,6 +42,7 @@ class Habit {
     required this.iconName,
     this.frequencyType = 'daily',
     this.customDays = '1,2,3,4,5,6,7',
+    this.frequencyTargetDays = 3,
     this.targetCount = 1,
     this.unit = 'times',
     this.reminderTime,
@@ -37,12 +52,17 @@ class Habit {
     this.longitude,
     this.locationName,
     this.geofenceRadius = 150.0,
+    this.habitType = HabitType.positive,
+    this.sortOrder = 0,
+    this.streakFreezesRemaining = 2,
     required this.createdAt,
     required this.updatedAt,
   });
 
   bool get isNumeric => targetCount > 1;
   bool get hasLocation => latitude != null && longitude != null;
+  bool get isNegative => habitType == HabitType.negative;
+  bool get isXPerWeek => frequencyType == 'x_per_week';
 
   bool isScheduledForWeekday(int weekday) {
     // DateTime weekday: 1 = Monday, 7 = Sunday
@@ -53,6 +73,8 @@ class Habit {
       final days = customDays.split(',').map((s) => int.tryParse(s.trim()) ?? 0).toList();
       return days.contains(weekday);
     }
+    // 'x_per_week': any day is eligible — tracking happens at the weekly window level
+    if (frequencyType == 'x_per_week') return true;
     return true;
   }
 
@@ -65,6 +87,7 @@ class Habit {
     String? iconName,
     String? frequencyType,
     String? customDays,
+    int? frequencyTargetDays,
     int? targetCount,
     String? unit,
     String? reminderTime,
@@ -74,6 +97,9 @@ class Habit {
     double? longitude,
     String? locationName,
     double? geofenceRadius,
+    HabitType? habitType,
+    int? sortOrder,
+    int? streakFreezesRemaining,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -86,6 +112,7 @@ class Habit {
       iconName: iconName ?? this.iconName,
       frequencyType: frequencyType ?? this.frequencyType,
       customDays: customDays ?? this.customDays,
+      frequencyTargetDays: frequencyTargetDays ?? this.frequencyTargetDays,
       targetCount: targetCount ?? this.targetCount,
       unit: unit ?? this.unit,
       reminderTime: reminderTime ?? this.reminderTime,
@@ -95,6 +122,9 @@ class Habit {
       longitude: longitude ?? this.longitude,
       locationName: locationName ?? this.locationName,
       geofenceRadius: geofenceRadius ?? this.geofenceRadius,
+      habitType: habitType ?? this.habitType,
+      sortOrder: sortOrder ?? this.sortOrder,
+      streakFreezesRemaining: streakFreezesRemaining ?? this.streakFreezesRemaining,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -110,6 +140,7 @@ class Habit {
       'icon_name': iconName,
       'frequency_type': frequencyType,
       'custom_days': customDays,
+      'frequency_target_days': frequencyTargetDays,
       'target_count': targetCount,
       'unit': unit,
       'reminder_time': reminderTime,
@@ -119,6 +150,9 @@ class Habit {
       'longitude': longitude,
       'location_name': locationName,
       'geofence_radius': geofenceRadius,
+      'habit_type': habitType.dbValue,
+      'sort_order': sortOrder,
+      'streak_freezes_remaining': streakFreezesRemaining,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -134,6 +168,7 @@ class Habit {
       iconName: (map['icon_name'] as String?) ?? 'check_circle',
       frequencyType: (map['frequency_type'] as String?) ?? 'daily',
       customDays: (map['custom_days'] as String?) ?? '1,2,3,4,5,6,7',
+      frequencyTargetDays: (map['frequency_target_days'] as int?) ?? 3,
       targetCount: (map['target_count'] as int?) ?? 1,
       unit: (map['unit'] as String?) ?? 'times',
       reminderTime: map['reminder_time'] as String?,
@@ -143,8 +178,16 @@ class Habit {
       longitude: (map['longitude'] as num?)?.toDouble(),
       locationName: map['location_name'] as String?,
       geofenceRadius: (map['geofence_radius'] as num?)?.toDouble() ?? 150.0,
+      habitType: HabitType.fromDb(map['habit_type'] as String?),
+      sortOrder: (map['sort_order'] as int?) ?? 0,
+      streakFreezesRemaining: (map['streak_freezes_remaining'] as int?) ?? 2,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
   }
+
+  /// Converts to JSON-compatible map for backup export.
+  Map<String, dynamic> toJson() => toMap();
+
+  factory Habit.fromJson(Map<String, dynamic> json) => Habit.fromMap(json);
 }

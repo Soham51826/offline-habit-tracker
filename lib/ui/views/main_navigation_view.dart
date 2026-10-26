@@ -7,10 +7,12 @@ import '../viewmodels/stats_viewmodel.dart';
 import 'dashboard_view.dart';
 import 'insights_view.dart';
 import 'analytics_view.dart';
+import 'achievements_view.dart';
 import 'settings_view.dart';
 import '../../data/models/behavioral_insight.dart';
 
 /// Main container housing floating glassmorphic navigation and cross-viewmodel coordination.
+/// Nav tabs: Today | Insights | Analytics | Trophies | Settings
 class MainNavigationView extends StatefulWidget {
   const MainNavigationView({super.key});
 
@@ -25,6 +27,7 @@ class _MainNavigationViewState extends State<MainNavigationView> {
     DashboardView(),
     InsightsView(),
     AnalyticsView(),
+    AchievementsView(),
     SettingsView(),
   ];
 
@@ -62,7 +65,7 @@ class _MainNavigationViewState extends State<MainNavigationView> {
         children: _screens,
       ),
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
@@ -78,7 +81,7 @@ class _MainNavigationViewState extends State<MainNavigationView> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
               decoration: BoxDecoration(
                 color: isDark
                     ? const Color(0xFF141C2E).withValues(alpha: 0.82)
@@ -92,36 +95,52 @@ class _MainNavigationViewState extends State<MainNavigationView> {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildNavItem(
-                    index: 0,
-                    icon: Icons.check_circle_outline_rounded,
-                    activeIcon: Icons.check_circle_rounded,
-                    label: 'Today',
-                    isDark: isDark,
+                  Expanded(
+                    child: _buildNavItem(
+                      index: 0,
+                      icon: Icons.check_circle_outline_rounded,
+                      activeIcon: Icons.check_circle_rounded,
+                      label: 'Today',
+                      isDark: isDark,
+                    ),
                   ),
-                  _buildNavItem(
-                    index: 1,
-                    icon: Icons.psychology_outlined,
-                    activeIcon: Icons.psychology_rounded,
-                    label: 'Insights',
-                    badgeCount: urgentCount,
-                    isDark: isDark,
+                  Expanded(
+                    child: _buildNavItem(
+                      index: 1,
+                      icon: Icons.psychology_outlined,
+                      activeIcon: Icons.psychology_rounded,
+                      label: 'Insights',
+                      badgeCount: urgentCount,
+                      isDark: isDark,
+                    ),
                   ),
-                  _buildNavItem(
-                    index: 2,
-                    icon: Icons.analytics_outlined,
-                    activeIcon: Icons.analytics_rounded,
-                    label: 'Analytics',
-                    isDark: isDark,
+                  Expanded(
+                    child: _buildNavItem(
+                      index: 2,
+                      icon: Icons.analytics_outlined,
+                      activeIcon: Icons.analytics_rounded,
+                      label: 'Analytics',
+                      isDark: isDark,
+                    ),
                   ),
-                  _buildNavItem(
-                    index: 3,
-                    icon: Icons.settings_outlined,
-                    activeIcon: Icons.settings_rounded,
-                    label: 'Settings',
-                    isDark: isDark,
+                  Expanded(
+                    child: _buildNavItem(
+                      index: 3,
+                      icon: Icons.emoji_events_outlined,
+                      activeIcon: Icons.emoji_events_rounded,
+                      label: 'Trophies',
+                      isDark: isDark,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildNavItem(
+                      index: 4,
+                      icon: Icons.settings_outlined,
+                      activeIcon: Icons.settings_rounded,
+                      label: 'Settings',
+                      isDark: isDark,
+                    ),
                   ),
                 ],
               ),
@@ -141,7 +160,7 @@ class _MainNavigationViewState extends State<MainNavigationView> {
     required bool isDark,
   }) {
     final isSelected = _currentIndex == index;
-    final primaryColor = const Color(0xFF10B981);
+    const primaryColor = Color(0xFF10B981);
     final unselectedColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return InkWell(
@@ -149,7 +168,7 @@ class _MainNavigationViewState extends State<MainNavigationView> {
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
               ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.1)
@@ -170,12 +189,16 @@ class _MainNavigationViewState extends State<MainNavigationView> {
               ),
             ),
             const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? primaryColor : unselectedColor,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? primaryColor : unselectedColor,
+                ),
               ),
             ),
           ],

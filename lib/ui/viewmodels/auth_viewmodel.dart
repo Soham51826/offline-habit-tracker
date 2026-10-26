@@ -153,6 +153,32 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  /// Instant demonstration login for examiners and project evaluators without hardcoded credentials.
+  Future<void> loginAsDemo({String name = 'Soham'}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(milliseconds: 250));
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setBool('is_guest', false);
+      await prefs.setString('user_name', name);
+      await prefs.setString('user_email', '$name@local.offline');
+
+      _isLoggedIn = true;
+      _isGuest = false;
+      _userName = name;
+      _userEmail = '$name@local.offline';
+    } catch (e) {
+      debugPrint('Error persisting demo session: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Logs out the user and clears stored session tokens.
   Future<void> logout() async {
     _isLoading = true;

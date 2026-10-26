@@ -12,6 +12,8 @@ class HabitCard extends StatefulWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onTimer;
+  final VoidCallback? onArchive;
 
   const HabitCard({
     super.key,
@@ -21,6 +23,8 @@ class HabitCard extends StatefulWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    this.onTimer,
+    this.onArchive,
   });
 
   @override
@@ -279,7 +283,7 @@ class _HabitCardState extends State<HabitCard> with SingleTickerProviderStateMix
                                         ),
                                         const SizedBox(width: 3),
                                         ConstrainedBox(
-                                          constraints: const BoxConstraints(maxWidth: 120),
+                                          constraints: const BoxConstraints(maxWidth: 75),
                                           child: Text(
                                             habit.locationName!,
                                             style: const TextStyle(
@@ -298,13 +302,92 @@ class _HabitCardState extends State<HabitCard> with SingleTickerProviderStateMix
                                   streakDays: widget.item.stats.currentStreak,
                                   isSmall: true,
                                 ),
+                                if (habit.streakFreezesRemaining > 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0284C7).withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFF0284C7).withValues(alpha: 0.3),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.ac_unit_rounded, size: 11, color: Color(0xFF0284C7)),
+                                        const SizedBox(width: 3),
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 75),
+                                          child: Text(
+                                            '${habit.streakFreezesRemaining} Freezes',
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF0284C7),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (habit.isNegative)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF43F5E).withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFFF43F5E).withValues(alpha: 0.3),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.shield_rounded, size: 11, color: Color(0xFFF43F5E)),
+                                        const SizedBox(width: 3),
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(maxWidth: 80),
+                                          child: Text(
+                                            '${widget.item.stats.currentStreak}d clean',
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFFF43F5E),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                               ],
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
+
+                      // In-app Duration Timer Button
+                      if (widget.onTimer != null && !habit.isNegative)
+                        IconButton(
+                          onPressed: widget.onTimer,
+                          icon: const Icon(Icons.timer_outlined, size: 20),
+                          tooltip: 'Focus Timer',
+                          constraints: const BoxConstraints(),
+                          style: IconButton.styleFrom(
+                            foregroundColor: const Color(0xFF6366F1),
+                            padding: const EdgeInsets.all(6),
+                          ),
+                        ),
+
+                      const SizedBox(width: 4),
 
                       // Tactile Micro-Bounce Checkmark Toggle Button
                       if (!habit.isNumeric)
@@ -355,10 +438,23 @@ class _HabitCardState extends State<HabitCard> with SingleTickerProviderStateMix
                           color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                         ),
                         onSelected: (val) {
+                          if (val == 'timer') widget.onTimer?.call();
                           if (val == 'edit') widget.onEdit();
+                          if (val == 'archive') widget.onArchive?.call();
                           if (val == 'delete') widget.onDelete();
                         },
                         itemBuilder: (context) => [
+                          if (widget.onTimer != null && !habit.isNegative)
+                            const PopupMenuItem(
+                              value: 'timer',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.timer_rounded, size: 18, color: Color(0xFF6366F1)),
+                                  SizedBox(width: 8),
+                                  Text('Focus Timer'),
+                                ],
+                              ),
+                            ),
                           const PopupMenuItem(
                             value: 'edit',
                             child: Row(
@@ -369,6 +465,17 @@ class _HabitCardState extends State<HabitCard> with SingleTickerProviderStateMix
                               ],
                             ),
                           ),
+                          if (widget.onArchive != null)
+                            const PopupMenuItem(
+                              value: 'archive',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.archive_rounded, size: 18, color: Color(0xFF8B5CF6)),
+                                  SizedBox(width: 8),
+                                  Text('Archive to Vault'),
+                                ],
+                              ),
+                            ),
                           const PopupMenuItem(
                             value: 'delete',
                             child: Row(
@@ -396,13 +503,18 @@ class _HabitCardState extends State<HabitCard> with SingleTickerProviderStateMix
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    '${widget.item.currentCount} / ${habit.targetCount} ${habit.unit}',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
+                                  Expanded(
+                                    child: Text(
+                                      '${widget.item.currentCount} / ${habit.targetCount} ${habit.unit}',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  const SizedBox(width: 8),
                                   Text(
                                     '${(widget.item.progressPercentage * 100).toInt()}%',
                                     style: TextStyle(

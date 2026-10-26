@@ -346,5 +346,68 @@ void main() {
       expect(reconstructed.locationName, equals('Campus Fitness Center'));
       expect(reconstructed.geofenceRadius, equals(200.0));
     });
+
+    test('Negative habit and streak freeze fields roundtrip accurately', () {
+      final negHabit = Habit(
+        id: 'neg-1',
+        title: 'No Cigarettes',
+        category: 'Health & Wellness',
+        colorValue: 0xFFF43F5E,
+        iconName: 'do_not_disturb',
+        habitType: HabitType.negative,
+        frequencyType: 'x_per_week',
+        frequencyTargetDays: 5,
+        streakFreezesRemaining: 3,
+        sortOrder: 4,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 2),
+      );
+
+      final map = negHabit.toMap();
+      final reconstructed = Habit.fromMap(map);
+
+      expect(reconstructed.isNegative, isTrue);
+      expect(reconstructed.habitType, equals(HabitType.negative));
+      expect(reconstructed.isXPerWeek, isTrue);
+      expect(reconstructed.frequencyTargetDays, equals(5));
+      expect(reconstructed.streakFreezesRemaining, equals(3));
+      expect(reconstructed.sortOrder, equals(4));
+    });
+
+    test('Behavioral engine recognizes negative habit sobriety milestones', () {
+      final negHabit = Habit(
+        id: 'neg-milestone',
+        title: 'No Junk Food',
+        category: 'Health & Wellness',
+        colorValue: 0xFFF43F5E,
+        iconName: 'no_food',
+        habitType: HabitType.negative,
+        createdAt: testDate.subtract(const Duration(days: 35)),
+        updatedAt: testDate,
+      );
+
+      final stats = HabitStats(
+        habitId: negHabit.id,
+        currentStreak: 30, // 30-day clean milestone!
+        longestStreak: 30,
+        totalCompletions: 30,
+        completionRate7Days: 1.0,
+        completionRate30Days: 1.0,
+        allTimeCompletionRate: 1.0,
+        consistencyScore: 100,
+      );
+
+      final insights = BehavioralInsightsEngine.analyzeAll(
+        habits: [negHabit],
+        logs: [],
+        statsMap: {negHabit.id: stats},
+        referenceTime: testDate,
+      );
+
+      expect(insights.any((i) => i.title.contains('30 Days Free')), isTrue);
+      final milestone = insights.firstWhere((i) => i.title.contains('30 Days Free'));
+      expect(milestone.severity, equals(InsightSeverity.celebration));
+      expect(milestone.psychologyPrinciple, contains('Habit Reversal Training'));
+    });
   });
 }

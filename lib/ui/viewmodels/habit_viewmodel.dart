@@ -17,12 +17,14 @@ class HabitViewModel extends ChangeNotifier {
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'All';
   List<HabitWithLog> _habitsWithLogs = [];
+  List<Habit> _archivedHabits = [];
   bool _isLoading = false;
   String? _errorMessage;
 
   DateTime get selectedDate => _selectedDate;
   String get selectedCategory => _selectedCategory;
   List<HabitWithLog> get habitsWithLogs => _habitsWithLogs;
+  List<Habit> get archivedHabits => _archivedHabits;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -139,6 +141,81 @@ class HabitViewModel extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Failed to delete habit: $e';
       notifyListeners();
+    }
+  }
+
+  /// Soft-archives a habit — removes from checklist but preserves all history.
+  Future<void> archiveHabit(String habitId) async {
+    try {
+      await _repository.archiveHabit(habitId);
+      await loadHabits();
+      _notifyDataChanged();
+    } catch (e) {
+      _errorMessage = 'Failed to archive habit: $e';
+      notifyListeners();
+    }
+  }
+
+  /// Restores an archived habit back to the active checklist.
+  Future<void> restoreHabit(String habitId) async {
+    try {
+      await _repository.restoreHabit(habitId);
+      await loadArchivedHabits();
+      await loadHabits();
+      _notifyDataChanged();
+    } catch (e) {
+      _errorMessage = 'Failed to restore habit: $e';
+      notifyListeners();
+    }
+  }
+
+  /// Loads all archived habits into [archivedHabits].
+  Future<void> loadArchivedHabits() async {
+    try {
+      _archivedHabits = await _repository.getArchivedHabits();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Failed to load archived habits: $e');
+    }
+  }
+
+  /// Applies a streak freeze for the currently selected date.
+  /// Returns true if the freeze was consumed successfully.
+  Future<bool> applyStreakFreeze(String habitId) async {
+    try {
+      final result = await _repository.applyStreakFreeze(habitId, _selectedDate);
+      if (result) {
+        await loadHabits();
+        _notifyDataChanged();
+      }
+      return result;
+    } catch (e) {
+      _errorMessage = 'Failed to apply streak freeze: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Persists a new drag-and-drop ordering of habits.
+  Future<void> reorderHabits(int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex) return;
+
+    // Optimistic UI update
+    final list = List<HabitWithLog>.from(_habitsWithLogs);
+    if (newIndex > oldIndex) newIndex -= 1;
+    final item = list.removeAt(oldIndex);
+    list.insert(newIndex, item);
+    _habitsWithLogs = list;
+    notifyListeners();
+
+    // Persist to SQLite
+    try {
+      final orderedIds = list.map((h) => h.habit.id).toList();
+      await _repository.reorderHabits(orderedIds);
+    } catch (e) {
+      // Rollback
+      await loadHabits();
+      debugPrint('Reorder failed: $e');
     }
   }
 

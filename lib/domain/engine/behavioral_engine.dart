@@ -53,6 +53,47 @@ class BehavioralInsightsEngine {
       final hasCompletedToday = completedDates.contains(todayStr);
       final hasCompletedYesterday = completedDates.contains(yesterdayStr);
 
+      if (habit.isNegative) {
+        // Negative habit (Sobriety / Break Bad Habit)
+        const sobrietyMilestones = [3, 7, 14, 30, 60, 90, 180, 365];
+        if (sobrietyMilestones.contains(stats.currentStreak)) {
+          final content = LocalCoachPrompts.formatSobrietyMilestone(
+            habitTitle: habit.title,
+            cleanDays: stats.currentStreak,
+          );
+          insights.add(BehavioralInsight(
+            id: _uuid.v4(),
+            habitId: habit.id,
+            type: InsightType.momentumMilestone,
+            title: content['title']!,
+            message: content['message']!,
+            actionableStep: content['actionable_step']!,
+            psychologyPrinciple: content['psychology_principle']!,
+            severity: InsightSeverity.celebration,
+            generatedAt: now,
+          ));
+        }
+
+        // If relapsed today or yesterday and streak reset to 0
+        if ((hasCompletedToday || hasCompletedYesterday) && stats.currentStreak == 0 && stats.longestStreak >= 3) {
+          final content = LocalCoachPrompts.formatRelapseRecovery(
+            habitTitle: habit.title,
+          );
+          insights.add(BehavioralInsight(
+            id: _uuid.v4(),
+            habitId: habit.id,
+            type: InsightType.recoveryOpportunity,
+            title: content['title']!,
+            message: content['message']!,
+            actionableStep: content['actionable_step']!,
+            psychologyPrinciple: content['psychology_principle']!,
+            severity: InsightSeverity.warning,
+            generatedAt: now,
+          ));
+        }
+        continue;
+      }
+
       // Rule A: Streak-at-Risk (Loss Aversion)
       // If current streak >= 3, not completed today, and local time is afternoon/evening (>= 14:00)
       if (stats.currentStreak >= 3 && !hasCompletedToday && now.hour >= 14) {

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/background_worker.dart';
+import '../../services/backup_restore_service.dart';
 import '../../services/geofence_service.dart';
 import '../../services/notification_service.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/habit_viewmodel.dart';
 import 'auth/login_view.dart';
 import 'auth/signup_view.dart';
+import 'auth/title_view.dart';
+import 'archived_habits_view.dart';
 
 /// Consumer-friendly Settings view designed for maximum accessibility
 /// across all age groups (20 to 80+).
@@ -19,6 +22,8 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   bool _remindersEnabled = true;
+  bool _isBackingUp = false;
+  bool _isRestoring = false;
 
   @override
   Widget build(BuildContext context) {
@@ -445,6 +450,161 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 24),
 
+          // 4.5. Data & Backup Section
+          _buildSectionHeader('Data & Backup', Icons.cloud_download_rounded, const Color(0xFF8B5CF6)),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: borderColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.storage_rounded, color: Color(0xFF8B5CF6), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Offline Backup & Restore',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
+                          Text(
+                            'Export all habits & logs to a JSON file. Restore from any backup.',
+                            style: TextStyle(fontSize: 12, color: textMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Export button
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed: _isBackingUp
+                        ? null
+                        : () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            setState(() => _isBackingUp = true);
+                            final path = await BackupRestoreService.instance.exportBackup();
+                            if (!mounted) return;
+                            setState(() => _isBackingUp = false);
+                            if (path != null) {
+                              _showBackupSuccess(path);
+                            } else {
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text('❌ Backup failed. Please try again.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                    icon: _isBackingUp
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.download_rounded, size: 18),
+                    label: Text(_isBackingUp ? 'Exporting...' : 'Export Backup (.json)'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Restore button
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: _isRestoring ? null : () => _showRestoreDialog(context),
+                    icon: _isRestoring
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.upload_rounded, size: 18),
+                    label: Text(_isRestoring ? 'Restoring...' : 'Restore from Backup'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF8B5CF6),
+                      side: const BorderSide(color: Color(0xFF8B5CF6)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // 4.6. Archive Vault shortcut
+          _buildSectionHeader('Archive Vault', Icons.inventory_2_rounded, const Color(0xFF0891B2)),
+          const SizedBox(height: 10),
+          Material(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(18),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ArchivedHabitsView()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0891B2).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.inventory_2_rounded, color: Color(0xFF0891B2), size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'View Archived Habits',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
+                          Text(
+                            'Restore or permanently delete paused habits.',
+                            style: TextStyle(fontSize: 12, color: textMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: textMuted),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
           // 5. Helpful Habit Tips (Simple & universal for ages 20 to 80)
           _buildSectionHeader('Tips for Building Habits', Icons.lightbulb_rounded, const Color(0xFFF59E0B)),
           const SizedBox(height: 10),
@@ -587,12 +747,29 @@ class _SettingsViewState extends State<SettingsView> {
           ),
           const SizedBox(height: 24),
 
-          // 6. About App Card
+          // 6. About App & Title Page
           Center(
             child: Column(
               children: [
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TitleView()),
+                    );
+                  },
+                  icon: const Icon(Icons.auto_stories_rounded, size: 18),
+                  label: const Text('View App Title & Welcome Screen'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF10B981),
+                    side: const BorderSide(color: Color(0xFF10B981)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Text(
-                  'HabitForge • Version 1.0.0',
+                  'HabitForge • Version 2.0.0',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textMuted),
                 ),
                 const SizedBox(height: 4),
@@ -619,6 +796,146 @@ class _SettingsViewState extends State<SettingsView> {
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ],
+    );
+  }
+
+  void _showBackupSuccess(String path) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Text('✅ ', style: TextStyle(fontSize: 20)),
+            Text('Backup Created!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your habits and all logs have been exported successfully.',
+              style: TextStyle(fontSize: 14, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.folder_rounded, color: Color(0xFF8B5CF6), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      path,
+                      style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF8B5CF6),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Got it!'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRestoreDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Text('📦 ', style: TextStyle(fontSize: 20)),
+            Text('Restore Backup'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter the full path to your .json backup file. '  
+              'Existing habits will be merged (not overwritten).',
+              style: TextStyle(fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: 'Backup file path',
+                hintText: '/storage/emulated/0/HabitForge/backups/...json',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.folder_open_rounded),
+              ),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final path = controller.text.trim();
+              if (path.isEmpty) return;
+              final messenger = ScaffoldMessenger.of(context);
+              final habitVm = context.read<HabitViewModel>();
+              Navigator.pop(ctx);
+              setState(() => _isRestoring = true);
+              final result = await BackupRestoreService.instance.importBackup(path);
+              if (!mounted) return;
+              setState(() => _isRestoring = false);
+              if (result.success) {
+                // Reload habits in viewmodel
+                await habitVm.loadHabits();
+                messenger.showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFF10B981),
+                    content: Text(
+                      '✅ Restored ${result.habitCount} habits, ${result.logCount} logs.',
+                    ),
+                  ),
+                );
+              } else {
+                messenger.showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text('❌ ${result.errorMessage}'),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF8B5CF6),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
     );
   }
 

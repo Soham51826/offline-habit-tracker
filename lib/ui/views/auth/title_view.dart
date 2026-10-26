@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../main_navigation_view.dart';
 import 'login_view.dart';
 import 'signup_view.dart';
 
@@ -11,8 +12,10 @@ class TitleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authVm = context.watch<AuthViewModel>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF10B981);
+    final isLoggedIn = authVm.isLoggedIn;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF090D16) : const Color(0xFFF8FAFC),
@@ -22,6 +25,15 @@ class TitleView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              if (Navigator.canPop(context))
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    tooltip: 'Back',
+                  ),
+                ),
               const SizedBox(height: 12),
 
               // 1. App Icon with Ambient Glow
@@ -122,83 +134,144 @@ class TitleView extends StatelessWidget {
               const SizedBox(height: 32),
 
               // 4. Action Buttons
-              // Get Started Button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SignUpView()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    elevation: 3,
-                    shadowColor: primaryColor.withValues(alpha: 0.35),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+              if (isLoggedIn) ...[
+                // Welcome Back Status Card
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
                   ),
-                  child: const Text(
-                    'Get Started',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        authVm.userName.isNotEmpty && authVm.userName != 'Guest'
+                            ? 'Welcome back, ${authVm.userName} 👋'
+                            : 'Guest Session Active 🌿',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF0F172A)),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-              // Log In Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginView()),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
-                    side: BorderSide(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
-                      width: 1.2,
+                // Open App Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MainNavigationView()),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.rocket_launch_rounded, size: 20),
+                    label: Text(
+                      authVm.userName.isNotEmpty && authVm.userName != 'Guest'
+                          ? 'Open HabitForge (${authVm.userName})'
+                          : 'Open HabitForge Dashboard',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'I Already Have an Account',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      shadowColor: primaryColor.withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Continue as Guest Option (zero barrier for seniors or instant testing)
-              TextButton(
-                onPressed: () async {
-                  await context.read<AuthViewModel>().continueAsGuest();
-                },
-                child: Text(
-                  'Continue as Guest',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    fontWeight: FontWeight.w600,
+                // Switch Account / Log Out
+                TextButton.icon(
+                  onPressed: () async {
+                    await authVm.logout();
+                  },
+                  icon: const Icon(Icons.logout_rounded, size: 16, color: Color(0xFFDC2626)),
+                  label: const Text(
+                    'Switch Account / Log Out',
+                    style: TextStyle(fontSize: 14, color: Color(0xFFDC2626), fontWeight: FontWeight.w600),
                   ),
                 ),
-              ),
+              ] else ...[
+                // Get Started Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SignUpView()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      shadowColor: primaryColor.withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('Get Started', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Log In Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginView()),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
+                      side: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                        width: 1.2,
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('I Already Have an Account', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Continue as Guest Option
+                TextButton(
+                  onPressed: () async {
+                    await context.read<AuthViewModel>().continueAsGuest();
+                    if (context.mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MainNavigationView()),
+                      );
+                    }
+                  },
+                  child: Text(
+                    'Continue as Guest',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
             ],
           ),

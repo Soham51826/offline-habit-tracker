@@ -99,4 +99,38 @@ class LocalCoachPrompts {
       'psychology_principle': 'Dr. Phillippa Lally: Habit Automaticity Curve',
     };
   }
+
+  static Map<String, String> formatSobrietyMilestone({
+    required String habitTitle,
+    required int cleanDays,
+  }) {
+    String bioNote = 'Your neurobiology is resetting!';
+    if (cleanDays >= 90) {
+      bioNote = '90 days clean: Substantial dopamine D2 receptor upregulation and prefrontal cortex regulation restored.';
+    } else if (cleanDays >= 30) {
+      bioNote = '30 days clean: Cravings curve has flattened significantly; acute withdrawal cues are fading.';
+    } else if (cleanDays >= 7) {
+      bioNote = '1 full week clean: The physical craving peak has been successfully surmounted.';
+    } else if (cleanDays >= 3) {
+      bioNote = '72 hours clean: The initial friction barrier has been broken.';
+    }
+
+    return {
+      'title': '🛡️ $cleanDays Days Free: $habitTitle',
+      'message': '$bioNote Every urge you overcome strengthens synaptic inhibitory control.',
+      'actionable_step': 'Identify the top trigger you avoided this week and document your substitution routine.',
+      'psychology_principle': 'Habit Reversal Training (Azrin & Nunn) & Dopamine Receptor Resensitization',
+    };
+  }
+
+  static Map<String, String> formatRelapseRecovery({
+    required String habitTitle,
+  }) {
+    return {
+      'title': '🌱 Compassionate Reset: $habitTitle',
+      'message': 'A slip is data, not defeat. In behavioral therapy, the "Abstinence Violation Effect" (AVE) causes people to turn a single lapse into a full relapse through shame.',
+      'actionable_step': 'Notice the HALT state (Hungry, Angry, Lonely, Tired) or cue that preceded the slip, and reset your clean counter with zero self-blame.',
+      'psychology_principle': 'G. Alan Marlatt: Cognitive-Behavioral Relapse Prevention & AVE Neutralization',
+    };
+  }
 }

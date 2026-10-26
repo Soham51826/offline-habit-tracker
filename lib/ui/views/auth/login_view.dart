@@ -14,8 +14,8 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'soham@habitforge.app');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = true;
   bool _isSubmitting = false;
@@ -227,10 +227,12 @@ class _LoginViewState extends State<LoginView> {
                   width: double.infinity,
                   height: 48,
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      _emailController.text = 'soham@habitforge.app';
-                      _passwordController.text = 'soham123';
-                      _handleLogin();
+                    onPressed: () async {
+                      final nav = Navigator.of(context);
+                      await context.read<AuthViewModel>().loginAsDemo(name: 'Soham');
+                      if (mounted) {
+                        nav.popUntil((route) => route.isFirst);
+                      }
                     },
                     icon: const Icon(Icons.bolt_rounded, size: 20, color: primaryColor),
                     label: const Text(

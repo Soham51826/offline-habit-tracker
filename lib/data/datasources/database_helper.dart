@@ -31,7 +31,7 @@ class DatabaseHelper {
       return await factory.openDatabase(
         'offline_habit_tracker.db',
         options: OpenDatabaseOptions(
-          version: 2,
+          version: 3,
           onCreate: _createDb,
           onUpgrade: _onUpgrade,
         ),
@@ -43,7 +43,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDb,
       onUpgrade: _onUpgrade,
     );
@@ -58,14 +58,26 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE habits ADD COLUMN location_name TEXT');
         await db.execute('ALTER TABLE habits ADD COLUMN geofence_radius REAL DEFAULT 150.0');
       } catch (e) {
-        debugPrint('Columns may already exist during migration: $e');
+        debugPrint('v2 columns may already exist: $e');
+      }
+    }
+    if (oldVersion < 3) {
+      // v3: Flexible frequency, negative habits, drag-order, streak freeze
+      try {
+        await db.execute('ALTER TABLE habits ADD COLUMN frequency_target_days INTEGER DEFAULT 3');
+        await db.execute("ALTER TABLE habits ADD COLUMN habit_type TEXT DEFAULT 'positive'");
+        await db.execute('ALTER TABLE habits ADD COLUMN sort_order INTEGER DEFAULT 0');
+        await db.execute('ALTER TABLE habits ADD COLUMN streak_freezes_remaining INTEGER DEFAULT 2');
+        debugPrint('v3 migration complete');
+      } catch (e) {
+        debugPrint('v3 columns may already exist: $e');
       }
     }
   }
 
   /// Creates all application tables with relational constraints and indexing.
   Future<void> _createDb(Database db, int version) async {
-    // 1. Habits Table
+    // 1. Habits Table (v3 schema)
     await db.execute('''
       CREATE TABLE habits (
         id TEXT PRIMARY KEY,
@@ -76,6 +88,7 @@ class DatabaseHelper {
         icon_name TEXT NOT NULL,
         frequency_type TEXT NOT NULL DEFAULT 'daily',
         custom_days TEXT DEFAULT '1,2,3,4,5,6,7',
+        frequency_target_days INTEGER DEFAULT 3,
         target_count INTEGER DEFAULT 1,
         unit TEXT DEFAULT 'times',
         reminder_time TEXT,
@@ -85,6 +98,9 @@ class DatabaseHelper {
         longitude REAL,
         location_name TEXT,
         geofence_radius REAL DEFAULT 150.0,
+        habit_type TEXT DEFAULT 'positive',
+        sort_order INTEGER DEFAULT 0,
+        streak_freezes_remaining INTEGER DEFAULT 2,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -179,16 +195,62 @@ class DatabaseHelper {
     return null;
   }
 
-  /// Retrieves all habits, optionally including archived records.
+  /// Retrieves all habits, sorted by user-defined sort_order, then creation time.
   Future<List<Habit>> getAllHabits({bool includeArchived = false}) async {
     final db = await database;
     final where = includeArchived ? null : 'is_archived = 0';
     final result = await db.query(
       'habits',
       where: where,
-      orderBy: 'created_at ASC',
+      orderBy: 'sort_order ASC, created_at ASC',
     );
     return result.map((m) => Habit.fromMap(m)).toList();
+  }
+
+  /// Returns only archived habits for the archive vault screen.
+  Future<List<Habit>> getArchivedHabits() async {
+    final db = await database;
+    final result = await db.query(
+      'habits',
+      where: 'is_archived = 1',
+      orderBy: 'updated_at DESC',
+    );
+    return result.map((m) => Habit.fromMap(m)).toList();
+  }
+
+  /// Atomically updates sort_order for multiple habits (drag-and-drop).
+  Future<void> updateSortOrders(List<Map<String, dynamic>> updates) async {
+    final db = await database;
+    final batch = db.batch();
+    for (final u in updates) {
+      batch.update(
+        'habits',
+        {'sort_order': u['sort_order']},
+        where: 'id = ?',
+        whereArgs: [u['id']],
+      );
+    }
+    await batch.commit(noResult: true);
+  }
+
+  /// Batch inserts habits for restore operation.
+  Future<void> batchInsertHabits(List<Habit> habits) async {
+    final db = await database;
+    final batch = db.batch();
+    for (final h in habits) {
+      batch.insert('habits', h.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    await batch.commit(noResult: true);
+  }
+
+  /// Batch inserts logs for restore operation.
+  Future<void> batchInsertLogs(List<HabitLog> logs) async {
+    final db = await database;
+    final batch = db.batch();
+    for (final l in logs) {
+      batch.insert('habit_logs', l.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    await batch.commit(noResult: true);
   }
 
   // -------------------------------------------------------------

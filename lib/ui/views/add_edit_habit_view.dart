@@ -29,6 +29,9 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
   late int _colorValue;
   late String _iconName;
   late String _frequencyType;
+  late int _frequencyTargetDays;
+  late HabitType _habitType;
+  late int _streakFreezesRemaining;
   late int _targetCount;
   late String _unit;
   String? _reminderTime;
@@ -52,6 +55,9 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
     _colorValue = h?.colorValue ?? AppConstants.categories.first.color.toARGB32();
     _iconName = h?.iconName ?? 'check_circle';
     _frequencyType = h?.frequencyType ?? 'daily';
+    _frequencyTargetDays = h?.frequencyTargetDays ?? 3;
+    _habitType = h?.habitType ?? HabitType.positive;
+    _streakFreezesRemaining = h?.streakFreezesRemaining ?? 2;
     _targetCount = h?.targetCount ?? 1;
     _unit = h?.unit ?? 'times';
     _reminderTime = h?.reminderTime;
@@ -321,6 +327,9 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
         colorValue: _colorValue,
         iconName: _iconName,
         frequencyType: _frequencyType,
+        frequencyTargetDays: _frequencyTargetDays,
+        habitType: _habitType,
+        streakFreezesRemaining: _streakFreezesRemaining,
         targetCount: _targetCount,
         unit: _unit,
         reminderTime: _reminderTime,
@@ -342,6 +351,9 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
         colorValue: _colorValue,
         iconName: _iconName,
         frequencyType: _frequencyType,
+        frequencyTargetDays: _frequencyTargetDays,
+        habitType: _habitType,
+        streakFreezesRemaining: _streakFreezesRemaining,
         targetCount: _targetCount,
         unit: _unit,
         reminderTime: _reminderTime,
@@ -391,14 +403,73 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
+            // 0. Habit Mode (Positive vs Negative / Sobriety Counter)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _habitType == HabitType.negative
+                    ? const Color(0xFFF43F5E).withValues(alpha: 0.08)
+                    : const Color(0xFF10B981).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _habitType == HabitType.negative
+                      ? const Color(0xFFF43F5E).withValues(alpha: 0.3)
+                      : const Color(0xFF10B981).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Habit Type *',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<HabitType>(
+                    segments: const [
+                      ButtonSegment(
+                        value: HabitType.positive,
+                        icon: Icon(Icons.add_task_rounded),
+                        label: Text('Build Routine'),
+                      ),
+                      ButtonSegment(
+                        value: HabitType.negative,
+                        icon: Icon(Icons.do_not_disturb_on_rounded),
+                        label: Text('Break Habit'),
+                      ),
+                    ],
+                    selected: {_habitType},
+                    onSelectionChanged: (set) {
+                      setState(() => _habitType = set.first);
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _habitType == HabitType.positive
+                        ? 'Build a positive daily habit with streaks, timers, and frequency tracking.'
+                        : 'Sobriety & Abstinence counter. Tracks consecutive clean days; logging records a lapse/reset.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _habitType == HabitType.negative
+                          ? const Color(0xFFE11D48)
+                          : const Color(0xFF047857),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
             // 1. Habit Title with Airtight Validation
             TextFormField(
               initialValue: _title,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Habit Title *',
-                hintText: 'e.g., Morning Meditation, HIIT Workout, Read 20 Pages',
+                hintText: _habitType == HabitType.negative
+                    ? 'e.g., No Cigarettes, Zero Social Media Scrolling, No Junk Food'
+                    : 'e.g., Morning Meditation, HIIT Workout, Read 20 Pages',
                 helperText: 'A concise, actionable name for your habit (3-60 characters)',
-                prefixIcon: Icon(Icons.edit_note_rounded),
+                prefixIcon: const Icon(Icons.edit_note_rounded),
               ),
               validator: (val) {
                 if (val == null || val.trim().isEmpty) {
@@ -520,68 +591,170 @@ class _AddEditHabitViewState extends State<AddEditHabitView> {
             SegmentedButton<String>(
               segments: const [
                 ButtonSegment(value: 'daily', label: Text('Daily')),
-                ButtonSegment(value: 'weekdays', label: Text('Mon - Fri')),
-                ButtonSegment(value: 'weekends', label: Text('Sat - Sun')),
+                ButtonSegment(value: 'weekdays', label: Text('Mon-Fri')),
+                ButtonSegment(value: 'weekends', label: Text('Sat-Sun')),
+                ButtonSegment(value: 'x_per_week', label: Text('X / Wk')),
               ],
               selected: {_frequencyType},
               onSelectionChanged: (newSet) {
                 setState(() => _frequencyType = newSet.first);
               },
             ),
+            if (_frequencyType == 'x_per_week') ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.tune_rounded, color: Color(0xFF6366F1), size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Goal: $_frequencyTargetDays days/wk',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF4338CA)),
+                    ),
+                    Expanded(
+                      child: Slider(
+                        value: _frequencyTargetDays.toDouble(),
+                        min: 1,
+                        max: 7,
+                        divisions: 6,
+                        activeColor: const Color(0xFF6366F1),
+                        label: '$_frequencyTargetDays days',
+                        onChanged: (v) => setState(() => _frequencyTargetDays = v.toInt()),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
 
-            // 6. Target Count & Unit with Boundary Validations
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    initialValue: _targetCount.toString(),
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Daily Target *',
-                      hintText: 'e.g., 1, 8, 30',
-                      helperText: 'Range: 1 - 1000',
-                      prefixIcon: Icon(Icons.numbers_rounded),
+            // 6. Target Count & Unit (for positive habits)
+            if (_habitType == HabitType.positive) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      initialValue: _targetCount.toString(),
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Daily Target *',
+                        hintText: 'e.g., 1, 8, 30',
+                        helperText: 'Range: 1 - 1000',
+                        prefixIcon: Icon(Icons.numbers_rounded),
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Target required';
+                        }
+                        final n = int.tryParse(val.trim());
+                        if (n == null) return 'Must be a number';
+                        if (n < 1) return 'Min is 1';
+                        if (n > 1000) return 'Max is 1,000';
+                        return null;
+                      },
+                      onSaved: (val) => _targetCount = int.tryParse(val ?? '1') ?? 1,
                     ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Target required';
-                      }
-                      final n = int.tryParse(val.trim());
-                      if (n == null) return 'Must be a number';
-                      if (n < 1) return 'Min is 1';
-                      if (n > 1000) return 'Max is 1,000';
-                      return null;
-                    },
-                    onSaved: (val) => _targetCount = int.tryParse(val ?? '1') ?? 1,
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 3,
-                  child: TextFormField(
-                    initialValue: _unit,
-                    decoration: const InputDecoration(
-                      labelText: 'Unit of Measurement *',
-                      hintText: 'e.g., times, glasses, mins',
-                      helperText: 'Metric label (max 20 chars)',
-                      prefixIcon: Icon(Icons.straighten_rounded),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      initialValue: _unit,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit of Measurement *',
+                        hintText: 'e.g., times, glasses, mins',
+                        helperText: 'Metric label (max 20 chars)',
+                        prefixIcon: Icon(Icons.straighten_rounded),
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Unit required';
+                        }
+                        if (val.trim().length > 20) {
+                          return 'Max 20 chars';
+                        }
+                        return null;
+                      },
+                      onSaved: (val) => _unit = val?.trim().isNotEmpty == true ? val!.trim() : 'times',
                     ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Unit required';
-                      }
-                      if (val.trim().length > 20) {
-                        return 'Max 20 chars';
-                      }
-                      return null;
-                    },
-                    onSaved: (val) => _unit = val?.trim().isNotEmpty == true ? val!.trim() : 'times',
                   ),
-                ),
-              ],
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            // 7. Streak Freeze Protection Allowance
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0284C7).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.ac_unit_rounded, color: Color(0xFF0284C7), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Streak Freezes (Grace Days)',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF0F172A)),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Protects your streak automatically if you miss a day.',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: _streakFreezesRemaining > 0
+                            ? () => setState(() => _streakFreezesRemaining--)
+                            : null,
+                        icon: const Icon(Icons.remove_circle_outline_rounded, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          '$_streakFreezesRemaining',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _streakFreezesRemaining < 7
+                            ? () => setState(() => _streakFreezesRemaining++)
+                            : null,
+                        icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
 

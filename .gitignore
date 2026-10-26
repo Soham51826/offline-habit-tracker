@@ -125,3 +125,9 @@ assets/env/.env.*
 !.env.example
 !assets/env/.env.example
 
+# Python virtual environment & temporary files
+.venv/
+__pycache__/
+~$*
+
+

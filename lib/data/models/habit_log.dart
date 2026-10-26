@@ -2,7 +2,7 @@ class HabitLog {
   final String id;
   final String habitId;
   final String date; // 'YYYY-MM-DD'
-  final String status; // 'completed', 'skipped', 'failed'
+  final String status; // 'completed', 'skipped', 'failed', 'frozen'
   final int value; // e.g. 1 completion, or count like 5 glasses
   final String? notes;
   final DateTime loggedAt;
@@ -22,6 +22,8 @@ class HabitLog {
   bool get isCompleted => status == 'completed';
   bool get isSkipped => status == 'skipped';
   bool get isFailed => status == 'failed';
+  /// True if this day was protected by a streak freeze (counts as "not broken").
+  bool get isFrozen => status == 'frozen';
 
   HabitLog copyWith({
     String? id,
@@ -70,4 +72,7 @@ class HabitLog {
       moodScore: map['mood_score'] as int?,
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
+  factory HabitLog.fromJson(Map<String, dynamic> json) => HabitLog.fromMap(json);
 }

@@ -87,10 +87,7 @@ class _AppRootView extends StatelessWidget {
       );
     }
 
-    if (authVm.isLoggedIn) {
-      return const MainNavigationView();
-    }
-
+    // Always welcome users through the Title Page
     return const TitleView();
   }
 }

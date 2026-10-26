@@ -8,7 +8,11 @@ import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/habit_viewmodel.dart';
 import '../viewmodels/insights_viewmodel.dart';
 import '../../data/models/behavioral_insight.dart';
+import '../../data/models/habit.dart';
+import '../../data/repositories/habit_repository.dart';
+import '../widgets/habit_timer_sheet.dart';
 import 'add_edit_habit_view.dart';
+import 'auth/title_view.dart';
 
 /// Main interactive dashboard showcasing the horizontal calendar strip,
 /// daily progress ring, urgent streak alerts, and staggered habit checklist.
@@ -22,6 +26,7 @@ class DashboardView extends StatefulWidget {
 class _DashboardViewState extends State<DashboardView> {
   final DateFormat _monthFormat = DateFormat('MMMM yyyy');
   final DateFormat _dayFormat = DateFormat('E');
+  bool _isReorderMode = false;
 
   @override
   void initState() {
@@ -48,7 +53,7 @@ class _DashboardViewState extends State<DashboardView> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Padding(
+            return SingleChildScrollView(
               padding: EdgeInsets.only(
                 left: 20,
                 right: 20,
@@ -62,9 +67,13 @@ class _DashboardViewState extends State<DashboardView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        habit.title,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      Expanded(
+                        child: Text(
+                          habit.title,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
@@ -149,7 +158,7 @@ class _DashboardViewState extends State<DashboardView> {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: isSelected ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.transparent,
               shape: BoxShape.circle,
@@ -158,10 +167,19 @@ class _DashboardViewState extends State<DashboardView> {
                 width: isSelected ? 2 : 1,
               ),
             ),
-            child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            child: Text(emoji, style: const TextStyle(fontSize: 22)),
           ),
           const SizedBox(height: 6),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -182,25 +200,44 @@ class _DashboardViewState extends State<DashboardView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              authVm.userName.isNotEmpty && authVm.userName != 'Guest'
-                  ? 'Hello, ${authVm.userName} 👋'
-                  : 'HabitForge',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-            Text(
-              _monthFormat.format(habitVm.selectedDate),
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+        title: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TitleView()),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                authVm.userName.isNotEmpty && authVm.userName != 'Guest'
+                    ? 'Hello, ${authVm.userName} 👋'
+                    : 'HabitForge',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
-            ),
-          ],
+              Text(
+                _monthFormat.format(habitVm.selectedDate),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
+          IconButton(
+            tooltip: 'App Overview & Title Page',
+            icon: const Icon(Icons.info_outline_rounded, color: Color(0xFF10B981)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TitleView()),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Refresh Habits & Insights',
             icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF10B981)),
@@ -259,7 +296,7 @@ class _DashboardViewState extends State<DashboardView> {
             _buildCategoryFilters(habitVm, isDark),
             const SizedBox(height: 16),
 
-            // 5. Staggered Animated Habits Checklist
+            // 5. Staggered Animated Habits Checklist / Reorderable List
             if (habitVm.isLoading)
               const Center(
                 child: Padding(
@@ -269,43 +306,134 @@ class _DashboardViewState extends State<DashboardView> {
               )
             else if (habitVm.filteredHabits.isEmpty)
               _buildEmptyState(context, habitVm)
-            else
-              ...habitVm.filteredHabits.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
+            else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Today's Routine",
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  ),
+                  if (habitVm.filteredHabits.length > 1)
+                    TextButton.icon(
+                      onPressed: () => setState(() => _isReorderMode = !_isReorderMode),
+                      icon: Icon(
+                        _isReorderMode ? Icons.check_circle_rounded : Icons.swap_vert_rounded,
+                        size: 18,
+                      ),
+                      label: Text(
+                        _isReorderMode ? 'Done' : 'Reorder',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: _isReorderMode ? const Color(0xFF10B981) : const Color(0xFF6366F1),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
 
-                return TweenAnimationBuilder<double>(
-                  key: ValueKey('stagger_${item.habit.id}_${habitVm.selectedDate}'),
-                  duration: Duration(milliseconds: 220 + (index * 60)),
-                  tween: Tween<double>(begin: 0.0, end: 1.0),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    return Transform.translate(
-                      offset: Offset(0, (1.0 - value) * 24),
-                      child: Opacity(
-                        opacity: value,
-                        child: child,
+              if (_isReorderMode)
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: habitVm.filteredHabits.length,
+                  onReorderItem: (oldIndex, newIndex) => habitVm.reorderHabits(oldIndex, newIndex),
+                  itemBuilder: (context, index) {
+                    final item = habitVm.filteredHabits[index];
+                    final habit = item.habit;
+                    return Container(
+                      key: ValueKey('reorder_${habit.id}'),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.drag_handle_rounded, color: isDark ? Colors.grey : const Color(0xFF94A3B8)),
+                          const SizedBox(width: 12),
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Color(habit.colorValue).withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              AppConstants.getIconData(habit.iconName),
+                              size: 16,
+                              color: Color(habit.colorValue),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  habit.title,
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                ),
+                                Text(
+                                  habit.category,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
-                  child: HabitCard(
-                    item: item,
-                    onToggle: () => habitVm.toggleHabitCompletion(item.habit.id),
-                    onProgressChange: (delta) =>
-                        habitVm.updateHabitProgress(item.habit.id, delta),
-                    onTap: () => _showLogDetailDialog(context, item),
-                    onEdit: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddEditHabitView(habitToEdit: item.habit),
+                )
+              else
+                ...habitVm.filteredHabits.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+
+                  return TweenAnimationBuilder<double>(
+                    key: ValueKey('stagger_${item.habit.id}_${habitVm.selectedDate}'),
+                    duration: Duration(milliseconds: 220 + (index * 60)),
+                    tween: Tween<double>(begin: 0.0, end: 1.0),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Transform.translate(
+                        offset: Offset(0, (1.0 - value) * 24),
+                        child: Opacity(
+                          opacity: value,
+                          child: child,
                         ),
                       );
                     },
-                    onDelete: () => _showDeleteConfirmation(context, item.habit.id),
-                  ),
-                );
-              }),
+                    child: HabitCard(
+                      item: item,
+                      onToggle: () => _handleHabitToggle(context, item, habitVm),
+                      onProgressChange: (delta) =>
+                          habitVm.updateHabitProgress(item.habit.id, delta),
+                      onTap: () => _showLogDetailDialog(context, item),
+                      onTimer: () => HabitTimerSheet.show(context, item.habit),
+                      onArchive: () => _confirmArchiveHabit(context, item.habit, habitVm),
+                      onEdit: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddEditHabitView(habitToEdit: item.habit),
+                          ),
+                        );
+                      },
+                      onDelete: () => _showDeleteConfirmation(context, item.habit.id),
+                    ),
+                  );
+                }),
+            ],
 
             const SizedBox(height: 110), // clearance for floating nav + FAB
           ],
@@ -507,6 +635,87 @@ class _DashboardViewState extends State<DashboardView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _handleHabitToggle(BuildContext context, HabitWithLog item, HabitViewModel habitVm) {
+    if (item.habit.isNegative && !item.isCompletedToday) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Text('⚠️ ', style: TextStyle(fontSize: 20)),
+              Text('Record Relapse / Slip?'),
+            ],
+          ),
+          content: Text(
+            'Did you have a slip with "${item.habit.title}" today? Logging this slip will reset your clean streak counter to 0.',
+            style: const TextStyle(fontSize: 13, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel (Keep Streak)'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                habitVm.toggleHabitCompletion(item.habit.id);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF43F5E),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Record Slip'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      habitVm.toggleHabitCompletion(item.habit.id);
+    }
+  }
+
+  void _confirmArchiveHabit(BuildContext context, Habit habit, HabitViewModel habitVm) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Archive Habit?'),
+        content: Text(
+          'Archive "${habit.title}"? It will be safely moved to the Archive Vault. You can restore it anytime in Settings.',
+          style: const TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await habitVm.archiveHabit(habit.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    content: Text('📦 "${habit.title}" moved to Archive Vault.'),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF8B5CF6),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Archive'),
+          ),
+        ],
       ),
     );
   }

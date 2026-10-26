@@ -62,6 +62,70 @@ class HabitRepository {
     await _dbHelper.deleteHabit(id);
   }
 
+  /// Soft-archives a habit (hides from daily checklist but preserves history).
+  Future<void> archiveHabit(String id) async {
+    final habit = await _dbHelper.getHabitById(id);
+    if (habit == null) return;
+    await _dbHelper.updateHabit(
+      habit.copyWith(isArchived: true, updatedAt: DateTime.now()),
+    );
+  }
+
+  /// Restores an archived habit back to the active checklist.
+  Future<void> restoreHabit(String id) async {
+    final habit = await _dbHelper.getHabitById(id);
+    if (habit == null) return;
+    await _dbHelper.updateHabit(
+      habit.copyWith(isArchived: false, updatedAt: DateTime.now()),
+    );
+  }
+
+  Future<List<Habit>> getArchivedHabits() async {
+    return await _dbHelper.getArchivedHabits();
+  }
+
+  /// Updates sort order for all habits after a drag-and-drop reorder.
+  Future<void> reorderHabits(List<String> orderedIds) async {
+    final updates = orderedIds
+        .asMap()
+        .entries
+        .map((e) => {'id': e.value, 'sort_order': e.key})
+        .toList();
+    await _dbHelper.updateSortOrders(updates);
+  }
+
+  /// Applies a streak freeze to today if the habit has freezes remaining.
+  /// Returns true if the freeze was successfully applied.
+  Future<bool> applyStreakFreeze(String habitId, DateTime date) async {
+    final dateStr = formatDate(date);
+    final habit = await _dbHelper.getHabitById(habitId);
+    if (habit == null || habit.streakFreezesRemaining <= 0) return false;
+
+    // Only freeze if the day is not already completed
+    final existingLog = await _dbHelper.getLog(habitId, dateStr);
+    if (existingLog != null && existingLog.isCompleted) return false;
+
+    final freezeLog = HabitLog(
+      id: existingLog?.id ?? _uuid.v4(),
+      habitId: habitId,
+      date: dateStr,
+      status: 'frozen',
+      value: 0,
+      loggedAt: DateTime.now(),
+      notes: '❄️ Streak Freeze Applied',
+    );
+    await _dbHelper.insertOrUpdateLog(freezeLog);
+
+    // Decrement remaining freezes on the habit
+    await _dbHelper.updateHabit(
+      habit.copyWith(
+        streakFreezesRemaining: habit.streakFreezesRemaining - 1,
+        updatedAt: DateTime.now(),
+      ),
+    );
+    return true;
+  }
+
   /// Retrieves scheduled habits for a specific date together with logs and updated stats.
   Future<List<HabitWithLog>> getHabitsForDate(DateTime date) async {
     final habits = await _dbHelper.getAllHabits();
@@ -143,6 +207,7 @@ class HabitRepository {
   }
 
   /// Calculates mathematically accurate streaks and 7-day/30-day rolling completion ratios.
+  /// Treats 'frozen' log entries as streak-preserving (not a break).
   Future<HabitStats> calculateStats(String habitId) async {
     final habit = await _dbHelper.getHabitById(habitId);
     if (habit == null) return HabitStats.empty(habitId);
@@ -153,35 +218,38 @@ class HabitRepository {
     final completedLogs = logs.where((l) => l.isCompleted).toList();
     final totalCompletions = completedLogs.length;
     final completedDateStrings = completedLogs.map((l) => l.date).toSet();
+    // Dates that count as "not broken" for streak purposes (completed OR frozen)
+    final streakSafeDates = logs
+        .where((l) => l.isCompleted || l.isFrozen)
+        .map((l) => l.date)
+        .toSet();
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final todayStr = formatDate(today);
 
     // 1. Mathematically Accurate Current Streak Calculation
+    // Frozen days count as safe (streak continues through them).
     int currentStreak = 0;
     DateTime cursor = today;
 
-    // Check if today was completed
-    final completedToday = completedDateStrings.contains(todayStr);
+    // Check if today was completed or frozen
+    final completedOrFrozenToday = streakSafeDates.contains(todayStr);
 
-    if (!completedToday) {
-      // If today is scheduled but not completed yet, streak is intact if the previous scheduled day was completed
+    if (!completedOrFrozenToday) {
+      // If today is scheduled but not completed/frozen, streak is intact if previous scheduled day was safe
       cursor = today.subtract(const Duration(days: 1));
-      // Rewind past any non-scheduled days
       while (!habit.isScheduledForWeekday(cursor.weekday) &&
           cursor.isAfter(today.subtract(const Duration(days: 14)))) {
         cursor = cursor.subtract(const Duration(days: 1));
       }
 
-      // If the most recent scheduled day was NOT completed, streak is broken (0)
-      if (!completedDateStrings.contains(formatDate(cursor))) {
+      if (!streakSafeDates.contains(formatDate(cursor))) {
         currentStreak = 0;
       } else {
-        // Most recent scheduled day was completed, start counting streak back from that day
         while (true) {
           if (habit.isScheduledForWeekday(cursor.weekday)) {
-            if (completedDateStrings.contains(formatDate(cursor))) {
+            if (streakSafeDates.contains(formatDate(cursor))) {
               currentStreak++;
             } else {
               break;
@@ -192,10 +260,10 @@ class HabitRepository {
         }
       }
     } else {
-      // Completed today: count today and walk backward
+      // Completed/frozen today: count today and walk backward
       while (true) {
         if (habit.isScheduledForWeekday(cursor.weekday)) {
-          if (completedDateStrings.contains(formatDate(cursor))) {
+          if (streakSafeDates.contains(formatDate(cursor))) {
             currentStreak++;
           } else {
             break;
