@@ -1,63 +1,170 @@
-# Miscellaneous
-*.class
-*.lock
-*.log
-*.pyc
-*.swp
-.buildlog/
-.history
-.venv   
+# ==============================================================================
+# Security & Sensitive Credentials (Critical for Public & Private Repositories)
+# ==============================================================================
+# Environment files & API Keys
+.env
+.env.*
+*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+assets/env/.env
+assets/env/.env.*
+# Whitelist example/template environment files
+!.env.example
+!assets/env/.env.example
+!*.env.example
 
+# Secret keys, Certificates & Private Tokens
+*.pem
+*.key
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+*.pub
+*.mobileprovision
 
-# Flutter repo-specific
-/bin/cache/
-/bin/internal/bootstrap.bat
-/bin/internal/bootstrap.sh
-/bin/mingit/
-/dev/benchmarks/mega_gallery/
-/dev/bots/.recipe_deps
-/dev/bots/android_tools/
-/dev/devicelab/ABresults*.json
-/dev/docs/doc/
-/dev/docs/flutter.docs.zip
-/dev/docs/lib/
-/dev/docs/pubspec.yaml
-/dev/integration_tests/**/xcuserdata
-/dev/integration_tests/**/Pods
-/packages/flutter/coverage/
-version
-analysis_benchmark.json
+# Android Signing Configurations & Local SDK paths
+key.properties
+**/android/key.properties
+signing.properties
+**/android/signing.properties
+local.properties
+**/android/local.properties
 
-# packages file containing multi-root paths
-.packages.generated
+# Cloud, Firebase & Third-Party Service Credentials
+google-services.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist
+*credentials*.json
+*secret*.json
+client_secret*.json
+service-account*.json
+serviceAccountKey*.json
+.aws/
+.gcp/
+firebase-debug.log
+.firebase/
 
-# Flutter/Dart/Pub related
-**/doc/api/
+# Local Database, User Data & Sensitive Backups
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite3
+# Keep required wasm binaries for web database engine
+!web/sqlite3.wasm
+*.dump
+*.backup
+*.bak
+*habit_backup*.json
+*habit_export*.json
+*backup*.json
+
+# ==============================================================================
+# IDEs, Editors & Operating System Metadata
+# ==============================================================================
+# Android Studio / IntelliJ IDEA
+.idea/
+**/.idea/
+*.iml
+**/*.iml
+*.iws
+*.ipr
+out/
+
+# Visual Studio Code
+.vscode/
+**/.vscode/
+!.vscode/extensions.json
+
+# Fleet & other editors
+.fleet/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ==============================================================================
+# Python Virtual Environments & Caches
+# ==============================================================================
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+pip-wheel-metadata/
+dist/
+build_py/
+*.egg-info/
+~$*
+
+# ==============================================================================
+# Flutter / Dart Build & Ephemeral Files
+# ==============================================================================
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-**/generated_plugin_registrant.dart
 .packages
+.packages.generated
 .pub-preload-cache/
 .pub/
 build/
+**/doc/api/
+**/generated_plugin_registrant.dart
 flutter_*.png
 linked_*.ds
 unlinked.ds
 unlinked_spec.ds
+analysis_benchmark.json
+app.*.symbols
+coverage/
 
-# Android related
+# Exceptions to above Flutter rules
+!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+!/dev/ci/**/Gemfile.lock
+!pubspec.lock
+
+# ==============================================================================
+# Android Build Files & Tooling
+# ==============================================================================
 **/android/**/gradle-wrapper.jar
 .gradle/
+**/.gradle/
 **/android/captures/
 **/android/gradlew
 **/android/gradlew.bat
-**/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
-**/android/key.properties
-*.jks
+.kotlin/
+**/.kotlin/
+.cxx/
+**/android/.cxx/
 
-# iOS/XCode related
+# ==============================================================================
+# iOS & macOS Build & Ephemeral Files
+# ==============================================================================
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3
 **/ios/**/*.moved-aside
@@ -86,48 +193,33 @@ unlinked_spec.ds
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
-
-# macOS
 **/Flutter/ephemeral/
 **/Pods/
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 **/macos/Flutter/ephemeral
 **/xcuserdata/
 
-# Windows
+# ==============================================================================
+# Windows & Linux Platform Generated
+# ==============================================================================
 **/windows/flutter/generated_plugin_registrant.cc
 **/windows/flutter/generated_plugin_registrant.h
 **/windows/flutter/generated_plugins.cmake
-
-# Linux
 **/linux/flutter/generated_plugin_registrant.cc
 **/linux/flutter/generated_plugin_registrant.h
 **/linux/flutter/generated_plugins.cmake
 
-# Coverage
-coverage/
-
-# Symbols
-app.*.symbols
-
-# Exceptions to above rules.
-!**/ios/**/default.mode1v3
-!**/ios/**/default.mode2v3
-!**/ios/**/default.pbxuser
-!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
-!/dev/ci/**/Gemfile.lock
-
-# Environment Secrets & Sensitive API Keys (Safe for public GitHub repositories)
-.env
-.env.*
-assets/env/.env
-assets/env/.env.*
-!.env.example
-!assets/env/.env.example
-
-# Python virtual environment & temporary files
-.venv/
-__pycache__/
-~$*
-
-
+# ==============================================================================
+# Logs & Diagnostic Dumps
+# ==============================================================================
+*.log
+flutter_*.log
+*.tmp
+*.temp
+*.swp
+*.bak
+.history/
+.buildlog/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

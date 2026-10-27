@@ -6,9 +6,15 @@ gradle-wrapper.jar
 /local.properties
 GeneratedPluginRegistrant.java
 .cxx/
+.kotlin/
+.idea/
+*.iml
 
-# Remember to never publicly share your keystore.
-# See https://flutter.dev/to/reference-keystore
+# Security & Secrets
 key.properties
+signing.properties
+google-services.json
 **/*.keystore
 **/*.jks
+**/*.p12
+**/*.pem
